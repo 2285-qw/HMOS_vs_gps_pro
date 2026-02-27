@@ -1,0 +1,13 @@
+{
+  "src": [
+    "pages/Index",
+    "pages/Page",
+    "pages/WelcomePage",
+    "pages/VideoPage",
+    "pages/UsbMonitorComponent",
+    "pages/UsbAccessoryMonitor",
+    "pages/LogExportPage",
+    "pages/BasePage",
+    "pages/LanGuangPage"
+  ]
+}
