@@ -2,7 +2,8 @@ import { Content } from "@kit.ArkUI";
 import { Context } from "@ohos.arkui.UIContext";
 import { BusinessError } from "@kit.BasicServicesKit";
 import { util } from "@kit.ArkTS";
-
+import { emitter } from '@kit.BasicServicesKit';
+import { map, mapCommon } from '@kit.MapKit';
 export class ObjectUtils {
   //ArrayBuffer转成16进制数据
   public static arrayBufferToHex(buffer: ArrayBuffer): string {
@@ -99,6 +100,39 @@ export class ObjectUtils {
 
 
   }
+
+  private static  sendNotice(id: number, data?: Uint8Array) {
+    // 1. 创建事件对象
+    const innerEvent: emitter.InnerEvent = {
+      eventId: id, // 事件ID，需与接收方保持一致
+      priority: emitter.EventPriority.HIGH  // 优先级控制
+    };
+
+    // 2. 创建要发送的数据
+    const eventData: emitter.EventData = {
+      data: { data: data }
+    };
+
+    // 3. 发送事件
+    emitter.emit(innerEvent, eventData);
+    console.log("事件发送成功");
+  }
+
+
+
+
+// 将 WGS84 转换为 GCJ02
+public static  wgs84ToGcj84(wgsLat: number, wgsLng: number): mapCommon.LatLng {
+  const wgsPos: mapCommon.LatLng = { latitude: wgsLat, longitude: wgsLng };
+  return map.convertCoordinateSync(
+    mapCommon.CoordinateType.WGS84,
+    mapCommon.CoordinateType.GCJ02,
+    wgsPos
+  );
+}
+
+
+
 
 
 }

@@ -7,11 +7,11 @@
         "material": {
           "certpath": "C:\\Users\\22850\\.ohos\\config\\default_MyApplication_3HPQqb17lfIuIHORu7P2DJD5gALJNtZ_5XU4T_YfFRw=.cer",
           "keyAlias": "debugKey",
-          "keyPassword": "0000001BC8AD68CDDF84E4B4865305600156A83A6F9887AB7559C8E9C735389A3DB31AA9319B2875F87C33",
+          "keyPassword": "0000001A505012D57496701E5F117EEF7FE71CD29A633A71BCD46CB9C51788BFFD5E3882B816F181FDAA",
           "profile": "C:\\Users\\22850\\.ohos\\config\\default_MyApplication_3HPQqb17lfIuIHORu7P2DJD5gALJNtZ_5XU4T_YfFRw=.p7b",
           "signAlg": "SHA256withECDSA",
           "storeFile": "C:\\Users\\22850\\.ohos\\config\\default_MyApplication_3HPQqb17lfIuIHORu7P2DJD5gALJNtZ_5XU4T_YfFRw=.p12",
-          "storePassword": "0000001B874C85BA8CB11921EED705E2E11CCCD7FB84FD002E9BFAFD99C716E86F06C5A8F9AD06F842AA2C"
+          "storePassword": "0000001AFC8F0A501C8006980AA4AA0F0724DA8DC42387CFA7C12E1EBB222763F9D2E979349AD072FABE"
         }
       }
     ],
@@ -33,10 +33,21 @@
     ],
     "buildModeSet": [
       {
-        "name": "debug",
+        "name": "debug"
       },
       {
         "name": "release"
+      }
+    ],
+    "capabilities": [
+      {
+        "bundleName": "com.vison.myapplication",
+        "config": [
+          {
+            "name": "Map Kit",
+            "capability": "com.huawei.service.mapkit"
+          }
+        ]
       }
     ]
   },

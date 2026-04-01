@@ -8,6 +8,7 @@
     "pages/UsbAccessoryMonitor",
     "pages/LogExportPage",
     "pages/BasePage",
-    "pages/LanGuangPage"
+    "pages/LanGuangPage",
+    "pages/MapPage"
   ]
 }

@@ -13,9 +13,9 @@ export  class MoreParams {
   dialogId?:  ComponentContent;
   uiContext?: UIContext;
   arrMoreBean: Array<MoreBean> = [];
-  onItemClick?: (type: MoreType) => void
+  onItemClick?: (id: number) => void
 
-  constructor(uiContext?:UIContext, onItemClick?: (type: MoreType) => void) {
+  constructor(uiContext?:UIContext, onItemClick?: (id: number) => void) {
     this.uiContext=uiContext;
     this.onItemClick=onItemClick
   }

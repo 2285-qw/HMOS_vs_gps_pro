@@ -47,6 +47,14 @@
     {
       "name": "sound",
       "value": "用于录制屏幕声音"
+    },
+    {
+      "name": "location",
+      "value": "用于精准定位"
+    },
+    {
+      "name": "a_location",
+      "value": "基础位置服务"
     }
 
   ]

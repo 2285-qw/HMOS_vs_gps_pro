@@ -3,16 +3,17 @@ import { MoreBean } from "../More/MoreBean";
 import { MoreParams } from "./DialogDataType/MoreParams";
 import { MoreType } from "../More/MoreType";
 import { Params, Type } from "./DialogDataType/Params";
+import { ObjectUtils } from "../../utils/ObjectUtils";
 
 
 @Builder
 export function buildLeftMore(params: MoreParams) {
   Column() {
     List() {
-      ForEach(params.arrMoreBean, (item: MoreBean) => {
+      ForEach(params.arrMoreBean, (item: MoreBean,index: number) => {
         ListItem() {
           Column(){
-            Image(item.getIcon()).width(30).height(30)
+            Image(item.getIcon()).width(30).height(30).colorFilter(item.isSelected()?ObjectUtils.hexToColorMatrix('#ff008ff4'):undefined)
             Text(item.getText())
               .fontSize(12)
               .fontColor('#faffffff')
@@ -20,7 +21,7 @@ export function buildLeftMore(params: MoreParams) {
           }.margin(5).onClick(()=>{
            // onItemClick(item.getType());
             if (params.onItemClick) {
-              params.onItemClick(item.getType());
+              params.onItemClick(index);
             }
           })
         }

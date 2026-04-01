@@ -1,4 +1,3 @@
-
 import { LanGuangObserver } from '../macrochip/Drone/observer/LanGuangObserver';
 import EntryAbility from '../entryability/EntryAbility';
 import { VideoPage } from './VideoPage';
@@ -36,8 +35,13 @@ import { SettingCalibration } from '../macrochip/Dialog/setting/SettingCalibrati
 import { MessageWhat } from '../macrochip/constant/MessageWhat';
 import { CalibrationDialog } from '../macrochip/Dialog/CalibrationDialog';
 import { CalibrationParams } from '../macrochip/Dialog/DialogDataType/CalibrationParams';
-
-
+import { FunctionHelper } from '../helper/FunctionHelper';
+import { geoLocationManager } from '@kit.LocationKit';
+import { LgFollowThread } from '../macrochip/thread/LgFollowThread';
+import { MoreBean } from '../macrochip/More/MoreBean';
+import { SendEmitterUtil } from '../utils/SendEmitterUtil';
+import { CompassView } from '../components/CompassView';
+import { MapPage } from './MapPage';
 
 
 @Entry
@@ -52,6 +56,8 @@ struct LanGuangPage {
   // 右侧弹窗：是否显示、当前选中的类型（用类型驱动右侧页面，确保点击左侧能切换）
   @State showRightDrawer: boolean = false;
   @State rightDrawerSelectedType: SettingType = SettingType.DATA;
+  @State isExpanded: boolean = false; //层级显示
+  @State isMap: boolean = false; //是否显示地图
   //参数变量
   private lastBatPer: number = 101;
   private showDefaultMessage: boolean = true;
@@ -61,13 +67,43 @@ struct LanGuangPage {
   // 在组件或Ability中获取UIContext
   private uiContext: UIContext = this.getUIContext(); // 组件内使用
   private router = this.uiContext.getRouter(); // 获取绑定当前上下文的Router对象
-  private dialogId?:ComponentContent<object>=undefined;//校准弹窗id
-  private DialogType:number=0;
-
+  private dialogId?: ComponentContent<object> = undefined; //校准弹窗id
+  private DialogType: number = 0;
+  private callback?: Callback<geoLocationManager.Location>;
+  private lgFollowThread?: LgFollowThread;
+  private data?: MoreParams; //左侧列表数据
 
   build() {
     Stack() {
-      VideoPage()
+      RelativeContainer() {
+        MapPage()
+          .zIndex(this.isExpanded ? 2 : 3)
+          .width(this.isExpanded ? '100%' : 160)
+          .height(this.isExpanded ? '100%' : 80)
+          .alignRules({
+            // 垂直居中
+            bottom: {
+              anchor: '__container__',
+              align: VerticalAlign.Bottom
+            }
+          })
+          .visibility((this.isExpanded || this.isMap) ? Visibility.Visible : Visibility.None)
+          .margin({ left: this.isExpanded ? 0 : 30, bottom: this.isExpanded ? 0 : 10 })
+        VideoPage()
+          .zIndex(this.isExpanded ? 3 : 2)
+          .width(!this.isExpanded ? '100%' : 160)
+          .height(!this.isExpanded ? '100%' : 80)
+          .alignRules({
+            // 垂直居中
+            bottom: {
+              anchor: '__container__',
+              align: VerticalAlign.Bottom
+            }
+          })
+          .margin({ left: !this.isExpanded ? 0 : 30, bottom: !this.isExpanded ? 0 : 10 })
+          .visibility((!this.isExpanded || this.isMap) ? Visibility.Visible : Visibility.None);
+      }
+
       RelativeContainer() {
         //头部栏
         Row() {
@@ -165,10 +201,7 @@ struct LanGuangPage {
                 console.log('解锁成功，执行起飞操作！类型：', type);
                 // 这里可以添加解锁后的具体逻辑，比如执行起飞操作
                 //解锁
-                this.sendHyControlThread?.setLockValue(1)
-                setTimeout(() => {
-                  this.sendHyControlThread?.setLockValue(0)
-                }, 1000);
+                this.onPressUnlock()
 
                 //起飞
                 setTimeout(() => {
@@ -221,8 +254,54 @@ struct LanGuangPage {
           }
         })
 
+        //左侧底部指北针
+        CompassView()
+          .margin({ left: 30 })
+          .alignRules({
+            // 垂直居中
+            bottom: {
+              anchor: '__container__',
+              align: VerticalAlign.Bottom
+            }
+          }).visibility(this.isMap ? Visibility.None : Visibility.Visible)
+          .onClick(() => {
+            this.isMap = true
+          })
+
+        //地图图传切换按钮
+        Row() {
+          Image($r('app.media.ic_show_angle_view'))
+            .width(30)
+            .height(30)
+            .onClick(()=>{
+              this.isMap = false
+            })
+        }
+        .visibility(!this.isMap ? Visibility.None : Visibility.Visible)
+        .justifyContent(FlexAlign.End)
+        .alignItems(VerticalAlign.Top)
+        .width(160)
+        .height(80)
+        .alignRules({
+          // 垂直居中
+          bottom: {
+            anchor: '__container__',
+            align: VerticalAlign.Bottom
+          }
+        })
+        .margin({ left: 30, bottom: 10 })
+        .onClick(() => {
+          if (this.isMap) {
+            this.isExpanded = !this.isExpanded;
+          } else {
+            this.isMap = true
+          }
+        });
+
       }.width('100%')
       .height('100%')
+      .hitTestBehavior(HitTestMode.Transparent) // 关键设置 //透传点击效果
+      .zIndex(4);
 
       // 右侧弹窗：占屏约 4/5，按 RIGHT_DRAWER_PAGE_TYPES 中配置的类型显示页面（可增删类型）
       if (this.showRightDrawer) {
@@ -343,28 +422,73 @@ struct LanGuangPage {
         }
         .width('100%')
         .height('100%')
+        .zIndex(5)
       }
     }
+    .hitTestBehavior(HitTestMode.Transparent) // 关键设置
     .width('100%')
     .height('100%')
   }
 
+  //左侧更多弹窗
   leftMoreDialog() {
     let wrappedBuilder = wrapBuilder<[MoreParams]>(buildLeftMore)
-    let data: MoreParams = new MoreParams(this.uiContext, (type: MoreType) => {
-
+    this.data = new MoreParams(this.uiContext, (id: number) => {
+      this.onLeftMoreOnClick(id);
     })
-    data.getType()
+    this.data.getType()
     const customContent = new ComponentContent(
       this.uiContext, // 传入UIContext
       wrappedBuilder, // @Builder函数
-      data
+      this.data
     );
-    data.dialogId = customContent;
+    this.data.dialogId = customContent;
 
     this.uiContext.getPromptAction().openCustomDialog(customContent, {
       alignment: DialogAlignment.Center
     })
+  }
+
+  //左侧更多按钮点击
+  onLeftMoreOnClick(id: number) {
+    let type = this.data?.arrMoreBean[id].getType();
+    switch (type) {
+      case MoreType.REV:
+        FunctionHelper.switchRev()
+        break
+      case MoreType.UNLOCK:
+        this.onPressUnlock()
+        break
+      case MoreType.FOLLOW:
+        //跟随
+        if (this.lgFollowThread == undefined) {
+          this.lgFollowThread = new LgFollowThread();
+        }
+
+        if (this.data?.arrMoreBean[id].isSelected()) {
+          //关闭跟随
+          this.lgFollowThread?.stopFollowTimer();
+        } else {
+          //开启跟随
+          this.lgFollowThread?.sendFollowData();
+        }
+
+        this.data?.arrMoreBean[id].setSelected(!this.data?.arrMoreBean[id].isSelected());
+        this.data?.dialogId?.update(this.data)
+
+
+        break
+
+    }
+
+  }
+
+  onPressUnlock() {
+    //解锁
+    this.sendHyControlThread?.setLockValue(1)
+    setTimeout(() => {
+      this.sendHyControlThread?.setLockValue(0)
+    }, 1000);
   }
 
   onPageShow(): void {
@@ -385,24 +509,49 @@ struct LanGuangPage {
     this.sendHyControlThread = new SendHyControlThread();
     this.sendHyControlThread.start();
 
+    //开始定位
+    this.GetLocation();
 
 
   }
 
+  //监听位置变化
+  GetLocation() {
+    // 1. 定义持续定位请求参数
+    let request: geoLocationManager.ContinuousLocationRequest = {
+      'interval': 1, // 上报间隔（秒）
+      'locationScenario': geoLocationManager.UserActivityScenario.TRANSPORT // 场景类型
+    };
+
+    // 2. 注册位置变化监听
+    this.callback = (location: geoLocationManager.Location): void => {
+      console.log('最新位置:', JSON.stringify(location));
+      //跟随
+      if (this.lgFollowThread != undefined) {
+        this.lgFollowThread.setLocation(location)
+      }
+      console.log('最新位置===:', JSON.stringify(location));
+      //传递发送位置信息
+      SendEmitterUtil.sendEventLocation(MessageWhat.MESSAGE_LOCATION, location)
+    };
+    geoLocationManager.on('locationChange', request, this.callback);
+
+  }
+
   //校准弹窗
-  setCalibrationDialog(type:number) {
-    if (this.dialogId==undefined) {
-      this.DialogType=type;
-      console.debug("==============","11111111",)
+  setCalibrationDialog(type: number) {
+    if (this.dialogId == undefined) {
+      this.DialogType = type;
+      console.debug("==============", "11111111",)
       let wrappedBuilder = wrapBuilder<[CalibrationParams]>(CalibrationDialog)
       let data = new CalibrationParams()
-      if (type==1) {
+      if (type == 1) {
         //水平校准
         data.setLevelType()
-      }else if (type==2){
+      } else if (type == 2) {
         //罗盘水平校准
         data.setCompassLevelType()
-      } else if (type==3){
+      } else if (type == 3) {
         //罗盘水平校准
         data.setCompassVerticalType()
       }
@@ -411,7 +560,7 @@ struct LanGuangPage {
         wrappedBuilder, // @Builder函数
         data
       );
-      this.dialogId=customContent;
+      this.dialogId = customContent;
       data.dialogId = customContent;
       this.uiContext.getPromptAction().openCustomDialog(customContent, {
         alignment: DialogAlignment.Center
@@ -419,11 +568,11 @@ struct LanGuangPage {
     }
 
   }
-  disCalibrationDialog(){
-    if (this.dialogId!=undefined) {
-      console.debug("==============","22222222222",)
+
+  disCalibrationDialog() {
+    if (this.dialogId != undefined) {
       this.uiContext?.getPromptAction().closeCustomDialog(this.dialogId)
-      this.dialogId=undefined
+      this.dialogId = undefined
     }
   }
 
@@ -431,6 +580,8 @@ struct LanGuangPage {
     //取消订阅
     emitter.off(Protocol.LAN_GUANG)
     this.sendHyControlThread?.cancel();
+    // 3. 结束时取消定位监听
+    geoLocationManager.off('locationChange', this.callback);
   }
 
   private sendNotice(id: number, data?: Uint8Array) {
@@ -479,8 +630,8 @@ struct LanGuangPage {
         if (lgPlaneHyBean.InsCalib == 0) {
           //水平校准
           this.setCalibrationDialog(1)
-        }else {
-          if (this.DialogType==1) {
+        } else {
+          if (this.DialogType == 1) {
             this.disCalibrationDialog()
           }
         }
@@ -489,7 +640,7 @@ struct LanGuangPage {
           //罗盘水平校准
           this.setCalibrationDialog(2)
         } else {
-          if (this.DialogType==2) {
+          if (this.DialogType == 2) {
             this.disCalibrationDialog()
           }
 
@@ -498,7 +649,7 @@ struct LanGuangPage {
           //罗盘垂直校准
           this.setCalibrationDialog(3)
         } else {
-          if (this.DialogType==3) {
+          if (this.DialogType == 3) {
             this.disCalibrationDialog()
           }
         }

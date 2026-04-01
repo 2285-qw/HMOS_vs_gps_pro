@@ -23,6 +23,7 @@ import { photoAccessHelper } from '@kit.MediaLibraryKit';
 import { BusinessError } from '@kit.BasicServicesKit';
 import { dataSharePredicates } from '@kit.ArkData';
 import  picker  from '@kit.MediaLibraryKit';
+import { geoLocationManager } from '@kit.LocationKit';
 
 
 
@@ -179,17 +180,26 @@ struct WelcomePage {
               middle: { anchor: "__container__", align: HorizontalAlign.Center }
             }).margin({ bottom: 30 })
             .onClick(() => {
+              if (!geoLocationManager.isLocationEnabled()) {
+                const atManager = abilityAccessCtrl.createAtManager();
+                atManager.requestGlobalSwitch(getContext(), abilityAccessCtrl.SwitchType.LOCATION)
+                  .then((enabled: boolean) => {
+                    if (enabled) {
+                      // 用户已开启位置服务，执行定位操作
+                    } else {
+                      // 用户拒绝开启，提示手动设置
+                      promptAction.showToast({ message: '请开启手机定位', duration: 2000 });
+                    }
+                  })
+                  .catch((err: BusinessError) => {
+                    console.error(`Failed to request location switch: ${err.message}`);
+                  });
+                return
+              }
 
-              /*  router.pushUrl({
-                  url: 'pages/BasePage'  // 目标页路径
-                }, router.RouterMode.Standard, (err) => {  // Standard模式可省略
-                  if (err) console.error(`跳转失败: ${err.message}`);
-                });
-  */
-
-
+              //申请权限
               const permissionResults = PermissionRequestUtil.checkAndRequestPermissions(['ohos.permission.WRITE_MEDIA',
-                'ohos.permission.READ_MEDIA'], getContext(this) as Context).then()
+                'ohos.permission.READ_MEDIA','ohos.permission.LOCATION','ohos.permission.APPROXIMATELY_LOCATION'], getContext(this) as Context).then()
               // 假设 getPermissionStatusList 是返回目标 Promise 的方法
               permissionResults.then((result: Array<[Permissions, abilityAccessCtrl.GrantStatus]>) => {
 
@@ -204,6 +214,7 @@ struct WelcomePage {
                 });
 
                 if (isR) {
+                  //跳转到控制页面
                   //有权限跳转页面
                   router.pushUrl({
                     url: 'pages/LanGuangPage'  // 目标页路径

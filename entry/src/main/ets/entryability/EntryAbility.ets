@@ -38,6 +38,7 @@ import { ParseUtils } from '../macrochip/Drone/core/parse/ParseUtils';
 import { ObserverManager } from '../macrochip/Drone/observer/ObserverManager';
 import { PreferencesUtil } from '../macrochip/utils/PreferencesUtil';
 import { ModeType, PageSendData } from '../macrochip/Drone/core/protocol/PageSendData';
+import { AppUtil } from '@pura/harmony-utils';
 
 
 const DOMAIN = 0x0000;
@@ -82,6 +83,7 @@ export default class EntryAbility extends UIAbility {
     hilog.info(DOMAIN, 'testTag', '%{public}s', 'Ability onCreate');
     hilog.setMinLogLevel(hilog.LogLevel.DEBUG);
 
+    AppUtil.init(this.context);
 
   }
 
