@@ -19,6 +19,14 @@
 #include <multimedia/player_framework/native_avbuffer.h>
 #include <native_window/external_window.h>
 
+//编码相关
+#include <multimedia/player_framework/native_avcodec_videoencoder.h>
+#include <multimedia/player_framework/native_avmuxer.h>
+#include <iostream>
+
+#include <fcntl.h>
+#include <sys/stat.h>
+
 // 缓冲区标志
 #define AVCODEC_BUFFER_FLAGS_NONE 0
 #define AVCODEC_BUFFER_FLAGS_EOS 1
@@ -140,6 +148,16 @@ public:
     // 设置Surface用于渲染
     bool setSurface(OHNativeWindow* nativeWindow);
     
+        // 设置Surface用于渲染
+    bool setSurfaceen(OHNativeWindow* nativeWindow);
+    
+    //码流录制视频
+    bool StreamRecording(int32_t fd);
+    //码流录制视频添加数据
+    bool  addRecordingData(const uint8_t *data, size_t size, int64_t timestamp,uint32_t flags);
+    //码流录制视频停止销毁
+    bool StopRecording();
+    
     // 启动解码器（不设置Surface时使用）
     bool start();
     
@@ -238,6 +256,14 @@ private:
     OH_AVCodec* decoder_;           // 解码器实例
     OH_AVFormat* format_;           // 格式实例
     OHNativeWindow* surface_;       // Surface用于渲染
+    
+    //录制相关
+     OH_AVMuxer *muxer_; //录制实列
+    int videoTrackId;//视频录制id
+    bool isRecording_;//是否录制
+    int64_t timestampR;//视频录制时间戳
+    bool isKeyFrame;//录制第一帧是否是关键帧
+     int64_t frameNumer;//视频录制帧数
     
     // 回调函数
     OnFrameDecodedCallback frameCallback_;

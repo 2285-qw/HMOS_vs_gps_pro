@@ -21,6 +21,7 @@ target_link_libraries(entry PUBLIC libnative_media_codecbase.so)
 target_link_libraries(entry PUBLIC libnative_media_core.so)
 target_link_libraries(entry PUBLIC libnative_media_vdec.so)
 target_link_libraries(entry PUBLIC libnative_window.so)
+target_link_libraries(entry PUBLIC libnative_media_avmuxer.so)
 
 
 

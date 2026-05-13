@@ -154,12 +154,14 @@ export class VideoStreamHandle {
         //console.log("获取到一帧数据_==得到i帧",this.header[2],oneFrame);
         this.isRequestIFrame =false;
       }
-       console.log("从buf获取到一帧数据_==", oneFrame);
+      // console.log("从buf获取到一帧数据_==", oneFrame);
       if (oneFrame != undefined && oneFrame.byteLength >= 5) {
        let frame= new Uint8Array(oneFrame);
        // console.log("获取到一帧数据_==", frame);
        // console.log("获取到一帧数据_==头",  this.header);
         const timestamp = Date.now() * 1000; // 转换为微秒
+      //  let  timestamp: bigint =BigInt( Date.now()) * 1000n; // 转换为微秒
+        console.log("时间戳数据==", timestamp);
         //传入数据解码
       let i=  NapiBuffer.decodeFrame(frame, timestamp,this.header[2]==0xA1);
 

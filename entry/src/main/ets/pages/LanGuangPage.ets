@@ -42,6 +42,10 @@ import { MoreBean } from '../macrochip/More/MoreBean';
 import { SendEmitterUtil } from '../utils/SendEmitterUtil';
 import { CompassView } from '../components/CompassView';
 import { MapPage } from './MapPage';
+import NapiBuffer, { VideoFrame } from 'libentry.so';
+import { photoAccessHelper } from '@kit.MediaLibraryKit';
+import fs from '@ohos.file.fs';
+
 
 
 @Entry
@@ -72,6 +76,7 @@ struct LanGuangPage {
   private callback?: Callback<geoLocationManager.Location>;
   private lgFollowThread?: LgFollowThread;
   private data?: MoreParams; //左侧列表数据
+  private isRecord: boolean = false; //是否录制中
 
   build() {
     Stack() {
@@ -273,7 +278,7 @@ struct LanGuangPage {
           Image($r('app.media.ic_show_angle_view'))
             .width(30)
             .height(30)
-            .onClick(()=>{
+            .onClick(() => {
               this.isMap = false
             })
         }
@@ -297,6 +302,42 @@ struct LanGuangPage {
             this.isMap = true
           }
         });
+
+        Image($r('app.media.ic_show_angle_view'))
+          .margin({ left: 30 })
+          .alignRules({
+            // 垂直居中
+            right: { anchor: '__container__', align: HorizontalAlign.End },
+            center: { anchor: '__container__', align: VerticalAlign.Center }
+          })
+          .height(50)
+          .width(50)
+          .backgroundColor('#20000000')
+          .onClick(() => {
+            // 保存到沙箱目录
+            const name = 'video_1';
+            let helper = photoAccessHelper.getPhotoAccessHelper(getContext(this));
+            let options: photoAccessHelper.CreateOptions = {
+              title: name, // 文件名（不带扩展名）
+              // subRelativePath: 'subfolder/' // 需系统相册内已存在该路径
+            };
+            /*   let uri =  helper.createAsset(photoAccessHelper.PhotoType.VIDEO, 'mp4', options).then((path:string)=>{
+                 NapiBuffer.StreamRecording(path);
+               });*/
+            const targetPath = `${getContext().filesDir}/${name}.mp4`;
+            let file = fs.openSync(targetPath, fs.OpenMode.CREATE | fs.OpenMode.READ_WRITE);
+            let fd = file.fd;
+            if (!this.isRecord) {
+              this.isRecord = true;
+              NapiBuffer.StreamRecording(fd);
+            } else {
+              this.isRecord = false;
+              NapiBuffer.StopRecording();
+
+              this.saveVideoToGallery(targetPath,file.path)
+            }
+
+          })
 
       }.width('100%')
       .height('100%')
@@ -424,6 +465,8 @@ struct LanGuangPage {
         .height('100%')
         .zIndex(5)
       }
+
+
     }
     .hitTestBehavior(HitTestMode.Transparent) // 关键设置
     .width('100%')
@@ -757,6 +800,51 @@ struct LanGuangPage {
     }
 
 
+  }
+
+/*  // ========== 修复后的正确代码 ==========
+  async saveVideoToAlbum(videoPath: string, fileFd: number) {
+    try {
+      const context = getContext() as common.UIAbilityContext;
+
+      // 1. 创建相册视频（正确写法！）
+      const videoAsset = await photoAccessHelper.createAsset(
+        photoAccessHelper.MediaType.VIDEO,
+        videoPath
+      );
+
+      // 2. 关闭文件
+      fs.closeSync(fileFd);
+
+      // 3. 等待关闭 asset（必须 await，否则不进相册）
+      await videoAsset.close();
+
+      console.log("✅ 视频已保存到系统相册！");
+      return true;
+
+    } catch (err) {
+      console.error("❌ 保存相册失败：", err);
+      return false;
+    }
+  }*/
+
+  //可成功保存沙盒路径文件到相册
+  async saveVideoToGallery(videoPath: string, fileFd: string) {
+    console.info('视频已成功保存到图库！1111111111111111111');
+    const context = getContext() as common.UIAbilityContext;
+    let photoAccessHelperObj = photoAccessHelper.getPhotoAccessHelper(context);
+    console.info('视频已成功保存到图库88888888888888');
+    // 1. 创建媒体资源变更请求
+    let assetChangeRequest = photoAccessHelper.MediaAssetChangeRequest.createAssetRequest(context, photoAccessHelper.PhotoType.VIDEO,"mp4");
+    console.info('视频已成功保存到图库！assetChangeRequest='+assetChangeRequest);
+    // 2. 添加视频资源到请求中
+    let file = fs.openSync(videoPath, fs.OpenMode.READ_ONLY);
+    assetChangeRequest.addResource(photoAccessHelper.ResourceType.VIDEO_RESOURCE, fileFd);
+    fs.closeSync(file);
+    console.info('视频已成功保存到图库！111');
+    // 3. 应用变更，将视频保存到图库
+    await photoAccessHelperObj.applyChanges(assetChangeRequest);
+    console.info('视频已成功保存到图库！');
   }
 }
 

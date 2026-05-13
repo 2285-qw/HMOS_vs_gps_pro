@@ -6,6 +6,9 @@
 #include "napi/native_api.h"
 #include "hmos_video_decoder.h"
 #include <native_window/external_window.h> // 标准头文件路径
+#include <sys/time.h>
+#include <stdint.h>
+
 
 
 /*#include "hmos_video_decoder.h"*/
@@ -71,8 +74,8 @@ napi_value FHLoopManager::createVideoStream(napi_env env, napi_callback_info typ
 napi_value FHLoopManager::addVideoStream(napi_env env, napi_callback_info data) {
 
     // 1. 打印字符串（无参数）
-   
-     OH_LOG_FATAL(LOG_APP, "帧数据_addVideoStream 进入");
+
+    OH_LOG_FATAL(LOG_APP, "帧数据_addVideoStream 进入");
 // LOG_APP表示应用日志类型，%{public}表示明文输出敏感信息
     // 1. 基础校验：句柄空/数据空/长度无效直接返回（上层已保证长度正确，仍做基础防护）
     if (FHLoopManager::GetInstance().myVideoLoopBufHandle == nullptr || data == nullptr) {
@@ -105,7 +108,7 @@ napi_value FHLoopManager::addVideoStream(napi_env env, napi_callback_info data) 
     );
 
     if (status != napi_ok) {
-          OH_LOG_FATAL(LOG_APP, "帧数据_addVideoStream nullptr2--- ");
+        OH_LOG_FATAL(LOG_APP, "帧数据_addVideoStream nullptr2--- ");
         return nullptr; // 类型校验失败处理
     }
 
@@ -145,7 +148,7 @@ napi_value FHLoopManager::addVideoStream(napi_env env, napi_callback_info data) 
         }
         // 更新写入位置
         BLBDATA_AdvSetWritePos(FHLoopManager::GetInstance().myVideoLoopBufHandle, iRecvLen);
-         OH_LOG_FATAL(LOG_APP, "帧数据_addVideoStream 指针写入成功");
+        OH_LOG_FATAL(LOG_APP, "帧数据_addVideoStream 指针写入成功");
     }
     // BLBDATA_Unlock(FHLoopManager::GetInstance().myVideoLoopBufHandle);
     OH_LOG_FATAL(LOG_APP, "帧数据_addVideoStream 已走完");
@@ -207,7 +210,7 @@ napi_value FHLoopManager::getVideoOneFrameArray(napi_env env, napi_callback_info
 
     if (!BLBDATA_GetOneFrame(FHLoopManager::GetInstance().myVideoLoopBufHandle, (char *)&stHead,
                              FHLoopManager::GetInstance().pVideoFrame.get(), 0)) {
-         OH_LOG_FATAL(LOG_APP,"帧数据 没有取到");
+       // OH_LOG_FATAL(LOG_APP, "帧数据 没有取到");
         return nullptr;
     }
 
@@ -257,7 +260,7 @@ napi_value FHLoopManager::getVideoOneFrameArray(napi_env env, napi_callback_info
     bool etsBoolean = false; // 存储提取的布尔值（默认false）
     napi_valuetype argType;
     status = napi_get_value_bool(env, args[1], &etsBoolean);
- OH_LOG_FATAL(LOG_APP, "getVideoOneFrameArray_进入");
+    OH_LOG_FATAL(LOG_APP, "getVideoOneFrameArray_进入");
     // 检查帧连续性
     if (etsBoolean) {
         // 如果当前不是I帧且需要I帧跳过显示
@@ -278,9 +281,9 @@ napi_value FHLoopManager::getVideoOneFrameArray(napi_env env, napi_callback_info
             void *buffer_ptr = nullptr;
             napi_status status = napi_create_arraybuffer(env, 5, &buffer_ptr, &array_buffer);
             if (status != napi_ok) {
-                 OH_LOG_FATAL(LOG_APP, "getVideoOneFrameArray_类型不对");
+                OH_LOG_FATAL(LOG_APP, "getVideoOneFrameArray_类型不对");
                 napi_throw_error(env, nullptr, "Failed to create ArrayBuffer");
-                 OH_LOG_FATAL(LOG_APP, "getVideoOneFrameArray_类型不对");
+                OH_LOG_FATAL(LOG_APP, "getVideoOneFrameArray_类型不对");
                 return nullptr;
             }
             return array_buffer;
@@ -309,7 +312,7 @@ napi_value FHLoopManager::getVideoOneFrameArray(napi_env env, napi_callback_info
 
     // 复制数据到ArrayBuffer
     memcpy(buffer_ptr, FHLoopManager::GetInstance().pVideoFrame.get(), len);
- OH_LOG_ERROR(LOG_APP, "getVideoOneFrameArray_成功放回数据");
+    OH_LOG_ERROR(LOG_APP, "getVideoOneFrameArray_成功放回数据");
     return array_buffer;
 }
 static napi_value CreateFixedArrayBuffer(napi_env env, napi_callback_info info) {
@@ -633,12 +636,11 @@ static void OnFrameCallbackWrapper(VideoFramePtr frame) {
         // 创建帧对象
         napi_value frameObj = CreateVideoFrameObject(g_decoderContext.currentEnv, frame);
 
-        
-        
+
         // 调用回调
         napi_value result;
         napi_call_function(g_decoderContext.currentEnv, nullptr, callback, 1, &frameObj, &result);
-     
+
 
         napi_close_handle_scope(g_decoderContext.currentEnv, scope);
     } else {
@@ -703,8 +705,8 @@ static void OnFormatChangedCallbackWrapper(int32_t width, int32_t height, int32_
 
     if (g_decoderContext.currentEnv) {
         // 调用回调
-    napi_value result;
-    //napi_call_function(g_decoderContext.currentEnv, nullptr, callback, 1, &formatObj, &result); 
+        napi_value result;
+        // napi_call_function(g_decoderContext.currentEnv, nullptr, callback, 1, &formatObj, &result);
     }
     napi_close_handle_scope(g_decoderContext.currentEnv, scope);
 }
@@ -805,9 +807,9 @@ static napi_value Start(napi_env env, napi_callback_info info) {
         napi_throw_error(env, nullptr, "Decoder not initialized");
         return nullptr;
     }
-    
+
     bool result = g_decoderContext.decoder->start();
-    
+
     napi_value resultValue;
     napi_get_boolean(env, result, &resultValue);
     return resultValue;
@@ -815,7 +817,7 @@ static napi_value Start(napi_env env, napi_callback_info info) {
 
 // NAPI: 设置Surface（用于渲染模式）
 static napi_value SetSurface(napi_env env, napi_callback_info info) {
-  
+
     size_t argc = 1;
     napi_value args[1];
 
@@ -967,13 +969,13 @@ static napi_value DecodeFrameTypedArray(napi_env env, napi_callback_info info) {
     napi_get_cb_info(env, info, &argc, args, nullptr, nullptr);
 
     if (argc < 2) {
-         OH_LOG_ERROR(LOG_APP, "解码一帧数据=argc<2");
+        OH_LOG_ERROR(LOG_APP, "解码一帧数据=argc<2");
         napi_throw_error(env, nullptr, "Wrong number of arguments");
         return nullptr;
     }
 
     if (!g_decoderContext.decoder || !g_decoderContext.isInitialized) {
-         OH_LOG_ERROR(LOG_APP, "解码一帧数据=Decoder not initialized");
+        OH_LOG_ERROR(LOG_APP, "解码一帧数据=Decoder not initialized");
         napi_throw_error(env, nullptr, "Decoder not initialized");
         return nullptr;
     }
@@ -986,11 +988,11 @@ static napi_value DecodeFrameTypedArray(napi_env env, napi_callback_info info) {
     size_t length = 0;
     uint32_t flags = AVCODEC_BUFFER_FLAGS_SYNC_FRAME | AVCODEC_BUFFER_FLAGS_CODEC_DATA;
     OH_LOG_ERROR(LOG_APP, "解码一帧数据=%{public}s", isTypedArray ? "yes" : "no");
-    //获取第三个数据 是否i帧
-       bool isI = false; // 存储提取的布尔值（默认false）
-    
-   napi_status status = napi_get_value_bool(env, args[2], &isI);
-      OH_LOG_ERROR(LOG_APP, "解码一帧数据= 是否关键帧%{public}s", isI ? "yes" : "no");
+    // 获取第三个数据 是否i帧
+    bool isI = false; // 存储提取的布尔值（默认false）
+
+    napi_status status = napi_get_value_bool(env, args[2], &isI);
+    OH_LOG_ERROR(LOG_APP, "解码一帧数据= 是否关键帧%{public}s", isI ? "yes" : "no");
     if (isTypedArray) {
         napi_typedarray_type type;
         napi_value buffer;
@@ -998,20 +1000,20 @@ static napi_value DecodeFrameTypedArray(napi_env env, napi_callback_info info) {
         napi_get_typedarray_info(env, args[0], &type, &length, &bufferData, &buffer, nullptr);
 
         if (type != napi_uint8_array) {
-           OH_LOG_ERROR(LOG_APP, "解码一帧数据=类型不对");
+            OH_LOG_ERROR(LOG_APP, "解码一帧数据=类型不对");
             return nullptr;
         }
 
         if (isI) {
             flags = AVCODEC_BUFFER_FLAGS_SYNC_FRAME;
         } else {
-           flags = AVCODEC_BUFFER_FLAGS_NONE;
+            flags = AVCODEC_BUFFER_FLAGS_NONE;
         }
         // 检查是否为EOS帧（空数组可能表示EOS）
         if (length == 0) {
             flags = AVCODEC_BUFFER_FLAGS_EOS;
         }
-       
+
     } else {
 
         // 处理null或undefined作为EOS
@@ -1023,25 +1025,43 @@ static napi_value DecodeFrameTypedArray(napi_env env, napi_callback_info info) {
             length = 0;
         } else {
             napi_throw_error(env, nullptr, "Expected Uint8Array, null or undefined for frame data");
-             OH_LOG_ERROR(LOG_APP, "解码一帧数据=null or undefined for frame data");
+            OH_LOG_ERROR(LOG_APP, "解码一帧数据=null or undefined for frame data");
             return nullptr;
         }
     }
 
     // 获取时间戳
     int64_t timestamp;
-    napi_get_value_int64(env, args[1], &timestamp);
+     napi_status status1 = napi_get_value_int64(env, args[1], &timestamp);
+    if (status != napi_ok) {
+        LOGI("int64位数据接受失败%{public}PRId64",status1);
+        return nullptr;
+    }
+    
+   /*  struct timeval tv;
+    gettimeofday(&tv, NULL);
+    timestamp = (uint64_t)tv.tv_sec * 1000000 + tv.tv_usec;*/
 
+    
+    
+    LOGI("时间戳数据C层, timestamp=%{public}lld,", timestamp);
     // 调用解码
     bool success = g_decoderContext.decoder->decodeFrame(static_cast<uint8_t *>(bufferData), length, timestamp,
                                                          flags // 传递标志
     );
 
+
     // 返回结果
     napi_value result;
     napi_get_boolean(env, success, &result);
-     OH_LOG_ERROR(LOG_APP, "解码一帧数据=null 走完");
+    OH_LOG_ERROR(LOG_APP, "解码一帧数据=null 走完");
     return result;
+}
+
+static uint64_t get_microsecond_epoch_time() {
+    struct timeval tv;
+    gettimeofday(&tv, NULL);
+    return (uint64_t)tv.tv_sec * 1000000 + tv.tv_usec;
 }
 
 // NAPI: 获取解码后的帧（同步）
@@ -1062,14 +1082,14 @@ static napi_value GetDecodedFrame(napi_env env, napi_callback_info info) {
         napi_get_value_int32(env, args[0], &timeoutMs);
     }
 
-    
+
     // 首先从内部队列获取
     VideoFramePtr frame = nullptr;
     {
         std::lock_guard<std::mutex> lock(g_decoderContext.queueMutex);
         if (!g_decoderContext.frameQueue.empty()) {
             frame = g_decoderContext.frameQueue.front();
-            
+
             g_decoderContext.frameQueue.pop();
         }
     }
@@ -1256,15 +1276,15 @@ static napi_value addUsbStream(napi_env env, napi_callback_info info) {
     LBUF_Lock(myUsbLoopBufDataHandle);
     LBUF_Write(myUsbLoopBufDataHandle, byteData.get(), iRecvLen);
     LBUF_Unlock(myUsbLoopBufDataHandle);
-      OH_LOG_FATAL(LOG_APP, "addUsb错误  已走完");
-     return nullptr;
+    OH_LOG_FATAL(LOG_APP, "addUsb错误  已走完");
+    return nullptr;
 }
 
 
 static napi_value getUsbOneFrame(napi_env env, napi_callback_info info) {
 // Java_com_vison_sdk_VNDK_getUsbOneFrame(JNIEnv *env, jclass clazz, jintArray header) {
     if (myUsbLoopBufDataHandle == nullptr) {
-       //  OH_LOG_FATAL(LOG_APP, "Usb错误_---myUsbLoopBufDataHandle为空");
+        //  OH_LOG_FATAL(LOG_APP, "Usb错误_---myUsbLoopBufDataHandle为空");
         return nullptr;
     }
 
@@ -1272,14 +1292,14 @@ static napi_value getUsbOneFrame(napi_env env, napi_callback_info info) {
     unsigned int readLen = 11;
     // 用智能指针管理frameData，自动释放
     std::unique_ptr<char, decltype(&free)> frameData(static_cast<char *>(malloc(11)), free);
-    
+
     if (!frameData || !LBUF_Read(myUsbLoopBufDataHandle, frameData.get(), &readLen)) {
         LBUF_Unlock(myUsbLoopBufDataHandle);
         return nullptr;
     }
     LBUF_Unlock(myUsbLoopBufDataHandle);
     for (int i = 0; i < 11; i++) {
-         //  OH_LOG_FATAL(LOG_APP, "Usb错误_frameData i= %{public}d data= %{public}d",i,frameData.get()[i]);
+        //  OH_LOG_FATAL(LOG_APP, "Usb错误_frameData i= %{public}d data= %{public}d",i,frameData.get()[i]);
     }
 
     if (frameData.get()[0] == 0xff && frameData.get()[1] == 0x56 && frameData.get()[2] == 0x53) {
@@ -1287,7 +1307,7 @@ static napi_value getUsbOneFrame(napi_env env, napi_callback_info info) {
         memcpy(&check, &frameData.get()[9], 2);
         uint16_t length = 0;
         uint16_t length1 = 0;
-        
+
         if (check == 0) {
             length = 501;
             memcpy(&length1, &frameData.get()[5], 2);
@@ -1316,13 +1336,13 @@ static napi_value getUsbOneFrame(napi_env env, napi_callback_info info) {
                     continue;
                 }
             }
-            
+
 
             if (!readSuccess) {
                 OH_LOG_FATAL(LOG_APP, "Usb错误  读取frameData1失败");
                 return nullptr;
             }
-            
+
             if (check == 0) {
                 length = length1;
             }
@@ -1364,7 +1384,7 @@ static napi_value getUsbOneFrame(napi_env env, napi_callback_info info) {
             memcpy(frameBuf.get(), frameData2.get() + 3 + 8, frame.len);
 
             int len = frame.len;
-            
+
 
             napi_value args[1];
             size_t argc = 1;
@@ -1416,7 +1436,37 @@ static napi_value getUsbOneFrame(napi_env env, napi_callback_info info) {
         }
     }
     // 所有智能指针在函数退出时自动释放
-     OH_LOG_ERROR(LOG_APP, "Usb错误 已走完");
+    OH_LOG_ERROR(LOG_APP, "Usb错误 已走完");
+    return nullptr;
+}
+
+
+// NAPI: 开始录制
+static napi_value StreamRecording(napi_env env, napi_callback_info info) {
+    size_t argc = 1;
+    napi_value args[1];
+    napi_get_cb_info(env, info, &argc, args, nullptr, nullptr);
+    
+    int32_t fd = -1;
+    napi_get_value_int32(env, args[0], &fd);
+    OH_LOG_INFO(LOG_APP, "[C++] Received FD: %{public}d", fd);
+    
+    if (fd < 0) {
+        OH_LOG_ERROR(LOG_APP, "[C++] Invalid FD");
+        napi_throw_error(env, nullptr, "Invalid FD");
+        return nullptr;
+    }
+
+    //需要接受一个路径传递过去
+    g_decoderContext.decoder->StreamRecording(fd);
+
+ 
+    return nullptr;
+}
+
+// NAPI: 停止录制
+static napi_value StopRecording(napi_env env, napi_callback_info info) {
+    g_decoderContext.decoder->StopRecording();
     return nullptr;
 }
 
@@ -1434,7 +1484,7 @@ static napi_value Init(napi_env env, napi_value exports) {
         {"CreateFixedArrayBuffer", nullptr, CreateFixedArrayBuffer, nullptr, nullptr, nullptr, napi_default, nullptr},
         // 全局解码器方法
         {"initialize", nullptr, Initialize, nullptr, nullptr, nullptr, napi_default, nullptr},
-        { "start", nullptr, Start, nullptr, nullptr, nullptr, napi_default, nullptr },
+        {"start", nullptr, Start, nullptr, nullptr, nullptr, napi_default, nullptr},
         {"setSurface", nullptr, SetSurface, nullptr, nullptr, nullptr, napi_default, nullptr},
         {"setCallbacks", nullptr, SetCallbacks, nullptr, nullptr, nullptr, napi_default, nullptr},
         {"decodeFrame", nullptr, DecodeFrameTypedArray, nullptr, nullptr, nullptr, napi_default, nullptr},
@@ -1447,6 +1497,9 @@ static napi_value Init(napi_env env, napi_value exports) {
         {"createUsbStream", nullptr, createUsbStream, nullptr, nullptr, nullptr, napi_default, nullptr},
         {"addUsbStream", nullptr, addUsbStream, nullptr, nullptr, nullptr, napi_default, nullptr},
         {"getUsbOneFrame", nullptr, getUsbOneFrame, nullptr, nullptr, nullptr, napi_default, nullptr},
+        // 录制方法
+        {"StreamRecording", nullptr, StreamRecording, nullptr, nullptr, nullptr, napi_default, nullptr},
+        {"StopRecording", nullptr, StopRecording, nullptr, nullptr, nullptr, napi_default, nullptr},
 
     };
 

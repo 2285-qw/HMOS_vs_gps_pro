@@ -132,4 +132,14 @@ export const getInfo: () => DecoderInfo;
 /*export const isSupported: (mimeType: string) => boolean;*/
 
 
+/**
+ * 录制相关
+ * */
+//开始录制
+export const  StreamRecording : (fd:number) => void;
+
+/*停止录制*/
+export const  StopRecording : () => void;
+
+
 
