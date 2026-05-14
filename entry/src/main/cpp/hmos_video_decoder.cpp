@@ -10,6 +10,7 @@
 #include <chrono>
 #include <algorithm>
 #include <cmath>
+#include <sys/time.h>
 
 // 只在文件开始时定义一次LOG_TAG
 #ifndef LOG_TAG
@@ -1036,7 +1037,7 @@ bool hmos_video_decoder_is_supported(const char *mimeType) {
 *
 */
 // 码流录制视频
-bool HmosVideoDecoder::StreamRecording(int32_t fd) {
+bool HmosVideoDecoder::StreamRecording(int32_t fd,int32_t width,int32_t height) {
     muxer_ = OH_AVMuxer_Create(fd, AV_OUTPUT_FORMAT_MPEG_4);
 
     OH_AVFormat *formatVideo = OH_AVFormat_Create();
@@ -1048,8 +1049,8 @@ bool HmosVideoDecoder::StreamRecording(int32_t fd) {
         OH_AVFormat_SetStringValue(formatVideo, OH_MD_KEY_CODEC_MIME, OH_AVCODEC_MIMETYPE_VIDEO_HEVC); // H.265
     }
 
-    OH_AVFormat_SetIntValue(formatVideo, OH_MD_KEY_WIDTH, 2560);
-    OH_AVFormat_SetIntValue(formatVideo, OH_MD_KEY_HEIGHT,1440);
+    OH_AVFormat_SetIntValue(formatVideo, OH_MD_KEY_WIDTH, width);
+    OH_AVFormat_SetIntValue(formatVideo, OH_MD_KEY_HEIGHT,height);
     // OH_AVFormat_SetDoubleValue(formatVideo, OH_MD_KEY_FRAME_RATE, 30.0);
     // OH_AVFormat_SetLongValue(formatVideo, OH_MD_KEY_BITRATE, 2000000);
     int32_t videoTrackIndex = -1;
@@ -1072,14 +1073,13 @@ bool HmosVideoDecoder::StreamRecording(int32_t fd) {
 bool HmosVideoDecoder::addRecordingData(const uint8_t *data, size_t size, int64_t timestamp, uint32_t flags) {
     if (muxer_ && isRecording_) {
 
-        if (flags == AVCODEC_BUFFER_FLAGS_SYNC_FRAME) {
+     /*   if (flags == AVCODEC_BUFFER_FLAGS_SYNC_FRAME) {
             isKeyFrame = true;
         }
         if (!isKeyFrame) {
             return false;
-        }
-
-
+        }*/
+        
         int32_t n;
         if (size <= INT32_MAX) {
             n = static_cast<int32_t>(size); // 安全
@@ -1088,38 +1088,7 @@ bool HmosVideoDecoder::addRecordingData(const uint8_t *data, size_t size, int64_
             // 处理溢出：记录错误、截断、或使用 int64_t 替代
             std::cerr << "size_t value too large for int32_t" << std::endl;
         }
-
-
-        /* OH_AVMemory *sample = OH_AVMemory_Create(n);
-         if (!sample) {
-             // 创建失败处理
-             printf("创建sample失败");
-             return false;
-         }
-         uint8_t *memoryAddr = OH_AVMemory_GetAddr(sample);
-         if (!memoryAddr) {
-             // 获取地址失败
-             printf("Failed to get memory address\n");
-             OH_AVMemory_Destroy(sample);
-             return false;
-         }
-
-         // 将你的数据拷贝到 OH_AVMemory 中
-         memcpy(memoryAddr, data, size);
-
-         // 5. 写入H.264/H.265数据
-         OH_AVCodecBufferAttr info = {.pts = frameNumer*100000, // 时间戳
-                                      .size = n,                     // 数据大小
-                                      .flags = flags};
-
-
-         LOGI("录制音视频时长, ret=%{public}lld,", timestampR - timestamp);
-
-         // int32_t videoTrackIndex = -1;
-         int ret = OH_AVMuxer_WriteSample(muxer_, videoTrackId, sample, info);
-        // OH_AVMuxer_WriteSampleBuffer()
-      */
-
+        
 
         // 6. 创建 OH_AVBuffer，用于承载帧数据
         OH_AVBuffer *sample = OH_AVBuffer_Create(n);
@@ -1140,7 +1109,13 @@ bool HmosVideoDecoder::addRecordingData(const uint8_t *data, size_t size, int64_
 
         // 8. 设置帧的时间戳和同步帧标志
         OH_AVCodecBufferAttr attr;
-        attr.pts = frameNumer * 100000; // 显示时间戳
+        
+        struct timeval tv;
+        gettimeofday(&tv, NULL);
+       int64_t t= (uint64_t)tv.tv_sec * 1000000 + tv.tv_usec;
+        
+        //attr.pts = frameNumer * 100000; // 显示时间戳
+        attr.pts = t -timestampR; // 显示时间戳
         attr.size = n;                  // 数据大小
         attr.flags = flags;
         attr.offset = 0;
@@ -1159,7 +1134,7 @@ bool HmosVideoDecoder::addRecordingData(const uint8_t *data, size_t size, int64_
 
 
         LOGI("录制添加一帧音视频数据, ret=%{public}d,", ret);
-        LOGI("录制添加一帧音视频数据, timestamp=%{public}lld,", frameNumer * 100000);
+        LOGI("录制添加一帧音视频数据, timestamp=%{public}lld,", t -timestampR);
 
         frameNumer++;
         /*  // 6. 停止并销毁资源
@@ -1171,6 +1146,11 @@ bool HmosVideoDecoder::addRecordingData(const uint8_t *data, size_t size, int64_
         frameNumer = 0;
     }
     return true;
+}
+ uint64_t get_microsecond_epoch_time() {
+    struct timeval tv;
+    gettimeofday(&tv, NULL);
+    return (uint64_t)tv.tv_sec * 1000000 + tv.tv_usec;
 }
 
 // 码流录制视频停止销毁

@@ -66,6 +66,20 @@ export enum DeviceType {
   Mr100_8801_4000_1280
 }
 
+export interface VideoSize {
+  width: number;
+  height: number;
+}
+
+export class Resolution {
+  static readonly V_640: VideoSize = { width: 640, height: 480 };
+  static readonly V_1280: VideoSize = { width: 1280, height: 720 };
+  static readonly V_1920: VideoSize = { width: 1920, height: 1080 };
+  static readonly V_2560: VideoSize = { width: 2560, height: 1440 };
+  static readonly V_3840: VideoSize = { width: 3840, height: 2160 };
+  static readonly V_4096: VideoSize = { width: 4096, height: 2160 };
+}
+
 
 export class PlayInfo {
   public static  transportMode:TransportMode = TransportMode.TCP;

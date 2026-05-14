@@ -152,7 +152,7 @@ public:
     bool setSurfaceen(OHNativeWindow* nativeWindow);
     
     //码流录制视频
-    bool StreamRecording(int32_t fd);
+    bool StreamRecording(int32_t fd,int32_t width,int32_t height);
     //码流录制视频添加数据
     bool  addRecordingData(const uint8_t *data, size_t size, int64_t timestamp,uint32_t flags);
     //码流录制视频停止销毁

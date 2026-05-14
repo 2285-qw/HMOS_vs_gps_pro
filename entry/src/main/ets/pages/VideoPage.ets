@@ -145,7 +145,7 @@ export struct VideoPage {
         })
 
 
-        Column({ space: 35 }) {
+      /*  Column({ space: 35 }) {
           Row({ space: 20 }) {
             Text('开始录制').fontSize(15).fontColor(Color.Gray).backgroundColor(Color.Black).onClick(() => {
               this.startRecording()
@@ -163,7 +163,7 @@ export struct VideoPage {
               this.stopRecording()
             })
           }.width('100%').padding(20)
-        }.width('90%').height('100%').justifyContent(FlexAlign.Start)
+        }.width('90%').height('100%').justifyContent(FlexAlign.Start)*/
 
       }.width('100%').height('100%')
     }

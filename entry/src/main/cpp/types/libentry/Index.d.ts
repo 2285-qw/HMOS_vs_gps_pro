@@ -53,6 +53,8 @@ export interface DecoderInfo {
   surfaceMode: boolean; // 是否为Surface渲染模式
 }
 
+
+
 /**
  * 帧回调函数类型
  */
@@ -136,10 +138,12 @@ export const getInfo: () => DecoderInfo;
  * 录制相关
  * */
 //开始录制
-export const  StreamRecording : (fd:number) => void;
+export const  StreamRecording : (fd:number,VideoSize:{width: number, height: number}) => void;
 
 /*停止录制*/
 export const  StopRecording : () => void;
+
+
 
 
 

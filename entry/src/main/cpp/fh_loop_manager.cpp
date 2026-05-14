@@ -1038,9 +1038,9 @@ static napi_value DecodeFrameTypedArray(napi_env env, napi_callback_info info) {
         return nullptr;
     }
     
-   /*  struct timeval tv;
+     struct timeval tv;
     gettimeofday(&tv, NULL);
-    timestamp = (uint64_t)tv.tv_sec * 1000000 + tv.tv_usec;*/
+    timestamp = (uint64_t)tv.tv_sec * 1000000 + tv.tv_usec;
 
     
     
@@ -1443,8 +1443,8 @@ static napi_value getUsbOneFrame(napi_env env, napi_callback_info info) {
 
 // NAPI: 开始录制
 static napi_value StreamRecording(napi_env env, napi_callback_info info) {
-    size_t argc = 1;
-    napi_value args[1];
+    size_t argc = 2;
+    napi_value args[2];
     napi_get_cb_info(env, info, &argc, args, nullptr, nullptr);
     
     int32_t fd = -1;
@@ -1456,9 +1456,26 @@ static napi_value StreamRecording(napi_env env, napi_callback_info info) {
         napi_throw_error(env, nullptr, "Invalid FD");
         return nullptr;
     }
+     // 检查是否为对象
+    napi_valuetype type;
+    napi_typeof(env, args[1], &type);
+    if (type != napi_object) {
+        napi_throw_error(env, nullptr, "Argument must be an object { width, height }");
+        return nullptr;
+    }
+
+    // 获取 width 和 height 属性
+    napi_value width_val, height_val;
+    napi_get_named_property(env, args[1], "width", &width_val);
+    napi_get_named_property(env, args[1], "height", &height_val);
+
+    int32_t width, height;
+    napi_get_value_int32(env, width_val, &width);
+    napi_get_value_int32(env, height_val, &height);
+    
 
     //需要接受一个路径传递过去
-    g_decoderContext.decoder->StreamRecording(fd);
+    g_decoderContext.decoder->StreamRecording(fd,width,height);
 
  
     return nullptr;
