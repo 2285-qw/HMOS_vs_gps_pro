@@ -24,7 +24,7 @@ import { BusinessError } from '@kit.BasicServicesKit';
 import { dataSharePredicates } from '@kit.ArkData';
 import  picker  from '@kit.MediaLibraryKit';
 import { geoLocationManager } from '@kit.LocationKit';
-
+import { RouteHelper } from '../macrochip/utils/RouteHelper';
 
 
 // 定义函数类型
@@ -71,23 +71,6 @@ struct WelcomePage {
 
   aboutToAppear() {
     console.log('WelcomePage：开始渲染'); // 看DevEco Studio的Logcat是否输出
-   // EntryAbility.getInstance().setAnalysisListener(new ConcreteAnalysisListener(this))
-
-  /*  let photoPicker = new photoAccessHelper.PhotoViewPicker();
-    let options = new photoAccessHelper.PhotoSelectOptions();
-    options.MIMEType = photoAccessHelper.PhotoViewMIMETypes.IMAGE_TYPE; // 仅选择图片
-    options.maxSelectNumber = 5; // 最多选5张
-
-    try {
-      photoPicker.select(options).then((result: photoAccessHelper.PhotoSelectResult) => {
-        console.info('选择成功，结果集: ' + JSON.stringify(result.photoUris)); // 返回图片URI数组
-      }).catch((err: BusinessError) => {
-        console.error('选择失败，错误码: ' + err.code + ', 错误信息: ' + err.message);
-      });
-    } catch (error) {
-      let err = error as BusinessError;
-      console.error('捕获异常，错误码: ' + err.code);
-    }*/
     this.queryDemo()
   }
 
@@ -141,13 +124,7 @@ struct WelcomePage {
                 LongPressGesture({ repeat: true })
                   .onAction((event: GestureEvent) => {
                     // 长按触发（持续触发）
-                    router.pushUrl({
-                      url: 'pages/LogExportPage'  // 目标页路径
-                    }, router.RouterMode.Standard, (err) => { // Standard模式可省略
-                      if (err) {
-                        console.error(`跳转失败: ${err.message}`);
-                      }
-                    });
+                    RouteHelper.pushUrl('pages/LogExportPage');
                     console.log("长按中...");
                   })
                   .onActionEnd(() => {
@@ -157,14 +134,28 @@ struct WelcomePage {
                   })
               ).onClick(() => {
 
-              router.pushUrl({
+          /*    router.pushUrl({
                 url: 'pages/LogExportPage'  // 目标页路径
               }, router.RouterMode.Standard, (err) => { // Standard模式可省略
                 if (err) {
                   console.error(`跳转失败: ${err.message}`);
                 }
-              });
-            })
+              });*/
+            }).gesture(
+              LongPressGesture({ duration: 400 })
+                .onAction(() => {
+                  // 自定义处理，可空实现以拦截系统长按
+                /*  router.pushUrl({
+                    url: 'pages/LogListPage'  // 目标页路径
+                  }, router.RouterMode.Standard, (err) => { // Standard模式可省略
+                    if (err) {
+                      console.error(`跳转失败: ${err.message}`);
+                    }
+                  });*/
+                  RouteHelper.pushUrl('pages/LogListPage');
+
+                })
+            )
 
             Stack() {
               // 背景图（底层）
@@ -216,13 +207,7 @@ struct WelcomePage {
                 if (isR) {
                   //跳转到控制页面
                   //有权限跳转页面
-                  router.pushUrl({
-                    url: 'pages/LanGuangPage'  // 目标页路径
-                  }, router.RouterMode.Standard, (err) => { // Standard模式可省略
-                    if (err) {
-                      console.error(`跳转失败: ${err.message}`);
-                    }
-                  });
+                  RouteHelper.pushUrl('pages/LanGuangPage');
                 } else {
                   //没有权限
                   promptAction.showToast({
@@ -396,10 +381,10 @@ struct WelcomePage {
     let asset =  fetchResult.then((router:photoAccessHelper.FetchResult<photoAccessHelper.PhotoAsset>)=>{
       router.getAllObjects().then((all:Array<photoAccessHelper.PhotoAsset>)=>{
         //得到所有的图片信息
-        console.error(`获取图片数量===`, all.length);
+       // console.error(`获取图片数量===`, all.length);
       })
       router.getCount()
-      console.error(`获取图片数量`, router.getCount());
+     // console.error(`获取图片数量`, router.getCount());
     })
   } catch (err) {
     console.error(`Error code ${err.code}: ${err.message}`);

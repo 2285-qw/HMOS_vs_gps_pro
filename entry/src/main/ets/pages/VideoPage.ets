@@ -15,6 +15,10 @@ import { photoAccessHelper } from '@kit.MediaLibraryKit';
 import { media } from '@kit.MediaKit';
 import { fileIo } from "@kit.CoreFileKit";
 import { emitter } from '@kit.BasicServicesKit';
+import { Protocol } from '../macrochip/Drone/core/protocol/Protocol';
+import { ProtocolManager } from '../macrochip/Drone/core/protocol/ProtocolManager';
+import { ModeType, PageSendData } from '../macrochip/Drone/core/protocol/PageSendData';
+import { MessageWhat } from '../macrochip/constant/MessageWhat';
 
 
 @Entry
@@ -186,27 +190,43 @@ export struct VideoPage {
     return null;
   }
 
-  onPageShow(): void {
-
+  aboutToAppear(): void {
     //监听连接状态开始视频流心跳
     EntryAbility.getInstance().setConnectionStatusListener(this.connectionStatusListener);
     // 持续订阅
-    emitter.on({ eventId: 1001 }, (eventData) => {
-      console.log("Received event data:", JSON.stringify(eventData.data));
-      // 显示接收到的文本
-      promptAction.showToast({
-        message: `接收到文本: ${eventData.data}`,
-        duration: 2000
-      });
+    emitter.on({ eventId: ProtocolManager.getInstance().getProtocol() }, (eventData: emitter.GenericEventData<PageSendData>) => {
+     // console.log("收到蓝光功能字信息:", JSON.stringify(eventData));
+
+      if (eventData.data?.modeType == ModeType.FlightControl) {
+        //飞控数据
+      } else if (eventData.data?.modeType == ModeType.Page) {
+        //页面数据
+        this.onMessage(eventData.data)
+      }
+
+
     });
+  }
+
+  onPageShow(): void {
+
 
   }
+  onMessage(pageSendData: PageSendData) {
+    switch (pageSendData.type) {
+      case MessageWhat.MESSAGE_PHOTOS:
+        console.log("图片名称=========")
+        this.captureImage();
+        break
+    }
+  }
+
 
   aboutToDisappear(): void {
     // 5. 使用完毕后释放资源
     NapiBuffer.release()
     //取消订阅
-    emitter.off(1001)
+    emitter.off( ProtocolManager.getInstance().getProtocol() )
   }
 
   onPageHide(): void {
@@ -444,20 +464,10 @@ export struct VideoPage {
 
   // 步骤2：执行截图
   private async captureImage(): Promise<void> {
-    //if (this.previewWidth === 0 || this.previewHeight === 0) return;
-
-
     try {
       this.pixelMap = await image.createPixelMapFromSurface(this.surfaceId);
       this.p = true;
-      /*  let  region: image.Region = {
-          x: 0, y: 0,
-          size:{width:1080,height:720}
 
-        };*/
-      /*   console.log("1111111111111=========",imageSource,this.surfaceId)
-         const pixelMap = await imageSource.createPixelMap();*/
-      console.log("1111111111111", this.pixelMap)
       this.saveImage(this.pixelMap)
       // 保存或使用pixelMap
     } catch (error) {
@@ -466,24 +476,27 @@ export struct VideoPage {
   }
 
   private async saveImage(pixelMap: image.PixelMap) {
-
     //当前时间戳
     const timestamp: number = Date.now(); // 或 new Date().getTime()
-    const name = 'img_' + timestamp;
+    const now = new Date();
+    const timestampName = `${now.getFullYear()}${(now.getMonth() + 1).toString().padStart(2, '0')}${now.getDate()}_${now.getHours()}${(now.getMinutes()).toString().padStart(2, '0')}${now.getSeconds()}`;
+    const name = 'img_' + timestampName;
+    console.info('图片名称= ' + name );
     // 保存到沙箱目录
     const targetPath = `${getContext().filesDir}/Image/${name}.jpg`;
 
     let helper = photoAccessHelper.getPhotoAccessHelper(getContext(this));
     let options: photoAccessHelper.CreateOptions = {
       title: name, // 文件名（不带扩展名）
-      // subRelativePath: 'subfolder/' // 需系统相册内已存在该路径
     };
     let uri = await helper.createAsset(photoAccessHelper.PhotoType.IMAGE, 'jpeg', options);
 
 
     try {
-      //保存图片
+      //保存图片到系统相册
       this.savePixelMapToPath(pixelMap, uri)
+      //保存图片到沙箱路径
+      this.savePixelMapToPath(pixelMap, targetPath)
       // console.info('图片已保存至: ' + targetPath);
     } catch (err) {
       // console.error('保存失败: ' + JSON.stringify(err));

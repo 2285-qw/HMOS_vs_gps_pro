@@ -47,6 +47,10 @@ import { photoAccessHelper } from '@kit.MediaLibraryKit';
 import fs from '@ohos.file.fs';
 import { Resolution } from '../model/PlayInfo';
 import { Mode, ShootButton } from '../macrochip/view/ShootButton';
+import { buildShootingSelectionDialog } from '../macrochip/Dialog/ShootingSelectionDialog';
+import { ShootingSelectionParams, ShootingType } from '../macrochip/Dialog/DialogDataType/ShootingSelectionParams';
+import { Utils } from '../macrochip/utils/Utils';
+import { RouteHelper } from '../macrochip/utils/RouteHelper';
 
 
 @Entry
@@ -58,13 +62,15 @@ struct LanGuangPage {
   @State wif_level: Resource = $r('app.media.ic_level');
   @State gps_level: Resource = $r('app.media.ic_level'); //gps数量等级
   @State top_title: string = ''; //头部显示文本
-  @State currentMode: Mode = Mode.RECORD; //拍照模式
+  @State currentMode: Mode = Mode.PHOTO; //拍照模式
   @State isRecording: boolean = false; //是否录像中
   // 右侧弹窗：是否显示、当前选中的类型（用类型驱动右侧页面，确保点击左侧能切换）
   @State showRightDrawer: boolean = false;
   @State rightDrawerSelectedType: SettingType = SettingType.DATA;
   @State isExpanded: boolean = false; //层级显示
   @State isMap: boolean = false; //是否显示地图
+  textTimerController: TextTimerController = new TextTimerController()//计时器控件
+  @State format: string = 'mm:ss.SS'
   //参数变量
   private lastBatPer: number = 101;
   private showDefaultMessage: boolean = true;
@@ -310,7 +316,12 @@ struct LanGuangPage {
         Column({space:10}) {
           Image($r('app.media.ic_camera_mode_photo')).width(30).height(30).objectFit(ImageFit.ScaleDown)
             .onClick(()=>{
-
+             // this.ShootingMoreDialog()
+              if (this.currentMode==Mode.RECORD) {
+                this.currentMode=Mode.PHOTO
+              }else {
+                this.currentMode=Mode.RECORD
+              }
             })
           //拍照录像按钮
           ShootButton({
@@ -320,23 +331,26 @@ struct LanGuangPage {
             if (this.currentMode === Mode.PHOTO) {
               console.info("拍照");
               // 在这里调用拍照逻辑
+              Utils.sendEvent(ProtocolManager.getInstance().getProtocol(),MessageWhat.MESSAGE_PHOTOS)
             } else if (this.currentMode === Mode.RECORD) {
               // 录像模式：点击开始/停止录像
               this.isRecording = !this.isRecording;
               // 保存到沙箱目录
               const name = 'video_1';
-              const targetPath = `${getContext().filesDir}/${name}.mp4`;
+              const targetPath = `${getContext().filesDir}/Video/${name}.mp4`;
               let file = fs.openSync(targetPath, fs.OpenMode.CREATE | fs.OpenMode.READ_WRITE);
               let fd = file.fd;
               if (this.isRecording) {
                 console.info("开始录像");
-
+                this.textTimerController.start()
                 this.isRecord = true;
                 NapiBuffer.StreamRecording(fd, Resolution.V_1280);
               } else {
                 console.info("停止录像");
                 this.isRecord = false;
                 NapiBuffer.StopRecording();
+                this.textTimerController.pause()
+                this.textTimerController.reset()
 
                 this.saveVideoToGallery(targetPath, file.path)
               }
@@ -351,6 +365,25 @@ struct LanGuangPage {
             }
           })
 
+          //计时器
+          TextTimer({
+            isCountDown: false,
+            count: 0,
+            controller: this.textTimerController
+          })
+            .visibility(this.isRecording?Visibility.Visible:Visibility.None)
+            .format(this.format)
+            .fontColor(Color.Black)
+            .fontSize(8)
+            .onTimer((utc: number, elapsedTime: number) => {
+              console.info('textTimer notCountDown utc is：' + utc + ', elapsedTime: ' + elapsedTime)
+            })
+
+          Image($r('app.media.icon_album')).width(30).height(30).objectFit(ImageFit.ScaleDown)
+            .onClick(()=>{
+              // this.ShootingMoreDialog()
+              RouteHelper.pushUrl('pages/MediaAlbum')
+            })
 
         }
         .zIndex(4)
@@ -553,6 +586,25 @@ struct LanGuangPage {
 
   }
 
+  //拍照模式选择弹窗
+  ShootingMoreDialog() {
+    let wrappedBuilder = wrapBuilder<[ShootingSelectionParams]>(buildShootingSelectionDialog)
+   let data = new ShootingSelectionParams(this.uiContext, (id: ShootingType) => {
+
+    })
+    const customContent = new ComponentContent(
+      this.uiContext, // 传入UIContext
+      wrappedBuilder, // @Builder函数
+     data
+    );
+   data.dialogId = customContent;
+
+    this.uiContext.getPromptAction().openCustomDialog(customContent, {
+      alignment: DialogAlignment.CenterEnd,
+      offset: { dx: -80, dy: 0 },       // 可选：微调位置，负值向左偏移
+    })
+  }
+
   onPressUnlock() {
     //解锁
     this.sendHyControlThread?.setLockValue(1)
@@ -570,6 +622,7 @@ struct LanGuangPage {
         //飞控数据
         this.onData(eventData.data)
       } else if (eventData.data?.modeType == ModeType.Page) {
+        //页面数据
         this.onMessage(eventData.data)
       }
 
@@ -825,51 +878,19 @@ struct LanGuangPage {
         }, 1000); // 1000毫秒 = 1秒
         break
     }
-
-
   }
-
-  /*  // ========== 修复后的正确代码 ==========
-    async saveVideoToAlbum(videoPath: string, fileFd: number) {
-      try {
-        const context = getContext() as common.UIAbilityContext;
-
-        // 1. 创建相册视频（正确写法！）
-        const videoAsset = await photoAccessHelper.createAsset(
-          photoAccessHelper.MediaType.VIDEO,
-          videoPath
-        );
-
-        // 2. 关闭文件
-        fs.closeSync(fileFd);
-
-        // 3. 等待关闭 asset（必须 await，否则不进相册）
-        await videoAsset.close();
-
-        console.log("✅ 视频已保存到系统相册！");
-        return true;
-
-      } catch (err) {
-        console.error("❌ 保存相册失败：", err);
-        return false;
-      }
-    }*/
 
   //可成功保存沙盒路径文件到相册
   async saveVideoToGallery(videoPath: string, fileFd: string) {
-    console.info('视频已成功保存到图库！1111111111111111111');
     const context = getContext() as common.UIAbilityContext;
     let photoAccessHelperObj = photoAccessHelper.getPhotoAccessHelper(context);
-    console.info('视频已成功保存到图库88888888888888');
     // 1. 创建媒体资源变更请求
     let assetChangeRequest =
       photoAccessHelper.MediaAssetChangeRequest.createAssetRequest(context, photoAccessHelper.PhotoType.VIDEO, "mp4");
-    console.info('视频已成功保存到图库！assetChangeRequest=' + assetChangeRequest);
     // 2. 添加视频资源到请求中
     let file = fs.openSync(videoPath, fs.OpenMode.READ_ONLY);
     assetChangeRequest.addResource(photoAccessHelper.ResourceType.VIDEO_RESOURCE, fileFd);
     fs.closeSync(file);
-    console.info('视频已成功保存到图库！111');
     // 3. 应用变更，将视频保存到图库
     await photoAccessHelperObj.applyChanges(assetChangeRequest);
     console.info('视频已成功保存到图库！');

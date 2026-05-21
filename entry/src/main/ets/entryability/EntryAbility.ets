@@ -1,4 +1,4 @@
-import { AbilityConstant, ConfigurationConstant, UIAbility, Want } from '@kit.AbilityKit';
+import { AbilityConstant, ConfigurationConstant, errorManager, UIAbility, Want } from '@kit.AbilityKit';
 import { hilog } from '@kit.PerformanceAnalysisKit';
 import { Type, window } from '@kit.ArkUI';
 import { abilityAccessCtrl, bundleManager, common, Permissions } from '@kit.AbilityKit';
@@ -39,11 +39,14 @@ import { ObserverManager } from '../macrochip/Drone/observer/ObserverManager';
 import { PreferencesUtil } from '../macrochip/utils/PreferencesUtil';
 import { ModeType, PageSendData } from '../macrochip/Drone/core/protocol/PageSendData';
 import { AppUtil } from '@pura/harmony-utils';
+import { LogManager } from '../Log/LogManager';
+import { crashObserver } from '../utils/CrashHandler';
 
 
 const DOMAIN = 0x0000;
 
 export default class EntryAbility extends UIAbility {
+  private registerId: number = -1;//日志记录id
   // 1. 创建 UdpSocket 实例
   udpSocket: socket.UDPSocket = socket.constructUDPSocketInstance();
   communicator ?: USBAccessoryCommunicator;
@@ -85,11 +88,34 @@ export default class EntryAbility extends UIAbility {
 
     AppUtil.init(this.context);
 
+    //初始化日志
+    LogManager.getInstance().init(this.context);
+
+
+    //注册全局崩溃日志
+    this.registerId = errorManager.on("error", crashObserver);
+    LogManager.getInstance().info("进入app","初始化成功");
+
+
   }
+
+/*  // 1. 将观察者对象定义为类的私有成员
+  private registerObserver: errorManager.ErrorObserver = {
+    onUnhandledException: (errorMsg: string) => {
+      console.error('捕获到未处理的异常:', errorMsg);
+      // 2. 调用你的日志记录方法（将崩溃写入文件）
+      LogManager.getInstance().error('CrashHandler', errorMsg);
+      // 注意：不要调用 process.exit(0)，让系统自己处理退出
+    }
+  };*/
 
   onDestroy(): void {
     hilog.info(DOMAIN, 'testTag', '%{public}s', 'Ability onDestroy');
     NetworkManager.getInstance().unregisterNetwork()
+    // 4. 在 Ability 销毁时注销监听，避免内存泄漏
+    if (this.registerId !== -1) {
+      errorManager.off('error', this.registerId);
+    }
   }
 
   onWindowStageCreate(windowStage: window.WindowStage): void {

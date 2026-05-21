@@ -9,6 +9,9 @@
     "pages/LogExportPage",
     "pages/BasePage",
     "pages/LanGuangPage",
-    "pages/MapPage"
+    "pages/MapPage",
+    "pages/LogListPage",
+    "pages/LogDetailPage",
+    "pages/MediaAlbum"
   ]
 }
