@@ -1,10 +1,12 @@
 // MediaAlbum.ets
 import fs from '@ohos.file.fs';
+import router from '@ohos.router';
 
 @Entry
 @Component
 struct MediaAlbum {
   @State currentTabIndex: number = 0;
+  private swiperController: SwiperController = new SwiperController();
   private context: Context = getContext(this);
 
   aboutToAppear(): void {
@@ -28,52 +30,93 @@ struct MediaAlbum {
 
   build() {
     Column() {
-      Tabs({ barPosition: BarPosition.Start, index: this.currentTabIndex }) {
-        TabContent() {
-          ImageGallery({ context: this.context })
-        }
-        .tabBar(this.TabBuilder('图片', 0)).background('#ff6d6d6d')
+      // 顶部栏：使用 RelativeContainer 实现左对齐 + 居中标签
+      RelativeContainer() {
+        // 返回按钮
+        Text('←')
+          .id('backBtn')
+          .fontSize(28)
+          .fontColor(Color.White)
+          .width(32)
+          .height(32)
+          .textAlign(TextAlign.Center)
+          .onClick(() => {
+            router.back();
+          })
+          .alignRules({
+            left: { anchor: '__container__', align: HorizontalAlign.Start },
+            center: { anchor: '__container__', align: VerticalAlign.Center }
+          }).margin({left:20})
 
-        TabContent() {
-          VideoGallery({ context: this.context })
+/*        // 相册标题
+        Text('相册')
+          .id('albumTitle')
+          .fontSize(20)
+          .fontColor(Color.White)
+          .margin({ left: 8 })
+          .alignRules({
+            left: { anchor: 'backBtn', align: HorizontalAlign.End },
+            center: { anchor: 'backBtn', align: VerticalAlign.Center }
+          })*/
+
+        // 标签容器（图片/视频），水平居中于整个容器
+        Row() {
+          Text('图片')
+            .fontSize(18)
+            .fontWeight(this.currentTabIndex === 0 ? FontWeight.Bold : FontWeight.Normal)
+            .fontColor(this.currentTabIndex === 0 ? Color.White : '#ffa49b9b')
+            .padding({ left: 12, right: 12, bottom: 6 })
+            .borderWidth({ bottom: 2  })
+            .borderColor({ bottom:this.currentTabIndex === 0 ? Color.White :Color.Transparent })
+            .onClick(() => {
+              this.currentTabIndex = 0;
+              this.swiperController.changeIndex(0);
+            })
+
+          Text('视频')
+            .fontSize(18)
+            .fontWeight(this.currentTabIndex === 1 ? FontWeight.Bold : FontWeight.Normal)
+            .fontColor(this.currentTabIndex === 1 ? Color.White : '#ffa49b9b')
+            .padding({ left: 12, right: 12, bottom: 6 })
+            .borderWidth({ bottom:2 })
+            .borderColor({ bottom:this.currentTabIndex === 1 ? Color.White :Color.Transparent})
+            .onClick(() => {
+              this.currentTabIndex = 1;
+              this.swiperController.changeIndex(1);
+            })
         }
-        .tabBar(this.TabBuilder('视频', 1)).background('#ff6d6d6d')
+        .id('tabsContainer')
+        .height('100%')
+        .alignItems(VerticalAlign.Bottom)   // 让文字底部对齐，下划线贴近底部
+        .alignRules({
+          middle: { anchor: '__container__', align: HorizontalAlign.Center }, // 注意：水平居中用
+          bottom: { anchor: '__container__', align: VerticalAlign.Bottom }
+        })
       }
-      .vertical(false)
-      .scrollable(true)
-      .width('auto')                 // 👈 让 Tabs 宽度由内容决定
-      .barHeight(40)
-      .barMode(BarMode.Scrollable)   // 👈 关键：让标签项根据内容宽度排列，不强制均分
+      .width('100%')
+      .height(40)
       .backgroundColor('#2F2F2F')
+      // 滑动切换区域
+      Swiper(this.swiperController) {
+        ImageGallery({ context: this.context })
+        VideoGallery({ context: this.context })
+      }
+      .index(this.currentTabIndex)
+      .indicator(false)
+      .loop(false)
+      .width('100%')
+      .layoutWeight(1)
       .onChange((index: number) => {
         this.currentTabIndex = index;
       })
     }
     .width('100%')
     .height('100%')
-  }
-
-  @Builder
-  TabBuilder(title: string, index: number) {
-    Column() {
-      Text(title)
-        .fontSize(18)
-        .fontWeight(this.currentTabIndex === index ? FontWeight.Bold : FontWeight.Normal)
-        .fontColor(this.currentTabIndex === index ? Color.White : '#ffa49b9b')
-        .margin({ bottom: 8 })
-      Divider()
-        .width('50%')
-        .height(2)
-        .backgroundColor(this.currentTabIndex === index ?  Color.White : 'transparent')
-        .margin({ top: 0 })
-    }
-    .width('200')
-    .height('100%')
-    .justifyContent(FlexAlign.End)
+    .backgroundColor('#ff6d6d6d')
   }
 }
 
-// 图片网格组件
+// 图片网格组件（保持不变）
 @Component
 struct ImageGallery {
   @Prop context: Context = getContext(this);
@@ -88,10 +131,7 @@ struct ImageGallery {
   async loadImages(): Promise<void> {
     const imageDir: string = `${getContext().filesDir}/Image`;
     try {
-      const isExistence: boolean = await fs.access(imageDir);
-      if (!isExistence) {
-        await fs.mkdir(imageDir);
-      }
+      await fs.access(imageDir);
     } catch {
       await fs.mkdir(imageDir);
     }
@@ -101,7 +141,6 @@ struct ImageGallery {
         .filter((fileName: string) => /\.(jpg|jpeg|png|gif)$/i.test(fileName))
         .map((fileName: string) => `file://${imageDir}/${fileName}`);
       this.imageList = images;
-      console.log("图片数量", this.imageList.length);
     } catch (err) {
       console.error(`读取图片目录失败: ${err}`);
     }
@@ -109,7 +148,7 @@ struct ImageGallery {
 
   build() {
     Column() {
-      if (this.imageList.length == 0) {
+      if (this.imageList.length === 0) {
         Blank()
         Text('暂无图片，请将图片放入沙箱目录')
           .fontSize(16)
@@ -166,7 +205,7 @@ struct ImageGallery {
   }
 }
 
-// 视频网格组件
+// 视频网格组件（保持不变）
 @Component
 struct VideoGallery {
   @Prop context: Context = getContext(this);
@@ -181,10 +220,7 @@ struct VideoGallery {
   async loadVideos(): Promise<void> {
     const videoDir: string = `${getContext().filesDir}/Video`;
     try {
-      const isExistence: boolean = await fs.access(videoDir);
-      if (!isExistence) {
-        await fs.mkdir(videoDir);
-      }
+      await fs.access(videoDir);
     } catch {
       await fs.mkdir(videoDir);
     }
@@ -201,7 +237,7 @@ struct VideoGallery {
 
   build() {
     Column() {
-      if (this.videoList.length == 0) {
+      if (this.videoList.length === 0) {
         Blank()
         Text('暂无视频，请将视频放入沙箱目录')
           .fontSize(16)
@@ -213,12 +249,11 @@ struct VideoGallery {
           ForEach(this.videoList, (uri: string, idx?: number) => {
             GridItem() {
               Stack() {
-                // 使用系统默认图标，建议替换为实际封面图或缩略图
                 Image($r('app.media.img_drone_location'))
                   .width('100%')
                   .aspectRatio(16 / 9)
                   .objectFit(ImageFit.Cover)
-                Image($r('app.media.img_drone_location'))
+                Image($r('app.media.icon_album'))
                   .width(48)
                   .height(48)
                   .opacity(0.8)
@@ -232,7 +267,7 @@ struct VideoGallery {
             }
           }, (uri: string, idx?: number) => idx?.toString() ?? uri)
         }
-        .columnsTemplate('1fr 1fr')
+        .columnsTemplate('1fr 1fr 1fr 1fr 1fr')
         .columnsGap(12)
         .rowsGap(12)
         .padding(12)

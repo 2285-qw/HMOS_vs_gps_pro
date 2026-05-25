@@ -86,6 +86,7 @@ struct LanGuangPage {
   private lgFollowThread?: LgFollowThread;
   private data?: MoreParams; //左侧列表数据
   private isRecord: boolean = false; //是否录制中
+  private file:fs.File| null = null;//录像文件
 
   build() {
     Stack() {
@@ -336,11 +337,14 @@ struct LanGuangPage {
               // 录像模式：点击开始/停止录像
               this.isRecording = !this.isRecording;
               // 保存到沙箱目录
-              const name = 'video_1';
-              const targetPath = `${getContext().filesDir}/Video/${name}.mp4`;
-              let file = fs.openSync(targetPath, fs.OpenMode.CREATE | fs.OpenMode.READ_WRITE);
-              let fd = file.fd;
+
               if (this.isRecording) {
+                const now = new Date();
+                const timestampName = `${now.getFullYear()}${(now.getMonth() + 1).toString().padStart(2, '0')}${now.getDate()}_${now.getHours()}${(now.getMinutes()).toString().padStart(2, '0')}${now.getSeconds()}`;
+                const name = 'video_'+ timestampName;
+                const  targetPath = `${getContext().filesDir}/Video/${name}.mp4`;
+                this.file = fs.openSync(targetPath, fs.OpenMode.CREATE | fs.OpenMode.READ_WRITE);
+                let fd = this.file.fd;
                 console.info("开始录像");
                 this.textTimerController.start()
                 this.isRecord = true;
@@ -351,8 +355,10 @@ struct LanGuangPage {
                 NapiBuffer.StopRecording();
                 this.textTimerController.pause()
                 this.textTimerController.reset()
-
-                this.saveVideoToGallery(targetPath, file.path)
+                if (this.file!=null) {
+                  this.saveVideoToGallery( this.file.path)
+                  console.log("视频保存路径", this.file.path)
+                }
               }
             } else if (this.currentMode === Mode.SCALE) {
               // 延时模式：点击开始/停止
@@ -881,14 +887,14 @@ struct LanGuangPage {
   }
 
   //可成功保存沙盒路径文件到相册
-  async saveVideoToGallery(videoPath: string, fileFd: string) {
+  async saveVideoToGallery( fileFd: string) {
     const context = getContext() as common.UIAbilityContext;
     let photoAccessHelperObj = photoAccessHelper.getPhotoAccessHelper(context);
     // 1. 创建媒体资源变更请求
     let assetChangeRequest =
       photoAccessHelper.MediaAssetChangeRequest.createAssetRequest(context, photoAccessHelper.PhotoType.VIDEO, "mp4");
     // 2. 添加视频资源到请求中
-    let file = fs.openSync(videoPath, fs.OpenMode.READ_ONLY);
+    let file = fs.openSync(fileFd, fs.OpenMode.READ_ONLY);
     assetChangeRequest.addResource(photoAccessHelper.ResourceType.VIDEO_RESOURCE, fileFd);
     fs.closeSync(file);
     // 3. 应用变更，将视频保存到图库
