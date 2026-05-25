@@ -4,6 +4,10 @@ import { BusinessError } from "@kit.BasicServicesKit";
 import { util } from "@kit.ArkTS";
 import { emitter } from '@kit.BasicServicesKit';
 import { map, mapCommon } from '@kit.MapKit';
+
+import { media } from '@kit.MediaKit';
+import fs from '@ohos.file.fs';
+import image from '@ohos.multimedia.image';
 export class ObjectUtils {
   //ArrayBuffer转成16进制数据
   public static arrayBufferToHex(buffer: ArrayBuffer): string {
@@ -132,6 +136,62 @@ public static  wgs84ToGcj84(wgsLat: number, wgsLng: number): mapCommon.LatLng {
 }
 
 
+
+
+/*
+  async generateThumbnail(videoUri: string, thumbPath: string): Promise<void> {
+    let imageGenerator: media.AVImageGenerator | null = null;
+    let file: fs.File | null = null;
+    try {
+      // 1. 创建 AVImageGenerator
+      imageGenerator = await media.createAVImageGenerator();
+
+      // 2. 打开视频文件
+      const videoPath = videoUri.replace('file://', '');
+      file = fs.openSync(videoPath, fs.OpenMode.READ_ONLY);
+      const fileStats = fs.statSync(videoPath);
+      // fdSrc 赋值（直接使用对象字面量，避免类型依赖）
+      imageGenerator.fdSrc = {
+        fd: file.fd,
+        offset: 0,
+        length: fileStats.size
+      };
+      // 3. 提取第一帧（API 12 需要三个参数）
+      //    timeUs: 0（微秒）
+      //    options: AV_IMAGE_QUERY_NEXT_SYNC （获取 >= timeUs 的最近一帧）
+      //    param: 输出尺寸和格式
+      const pixelMap = await imageGenerator.fetchFrameByTime(
+        0,
+        media.AVImageQueryOptions.AV_IMAGE_QUERY_NEXT_SYNC,
+        { width: 400, height: 400 }   // 输出缩略图尺寸，可自行调整
+      );
+
+      if (pixelMap) {
+        // 4. 编码并保存为 JPEG
+        const imagePacker = image.createImagePacker();
+        const packOpts: image.PackingOption = { format: 'image/jpeg', quality: 80 };
+        const data = await imagePacker.packToData(pixelMap, packOpts);
+        const thumbFile = fs.openSync(thumbPath, fs.OpenMode.CREATE | fs.OpenMode.WRITE_ONLY);
+        fs.writeSync(thumbFile.fd, data);
+        fs.closeSync(thumbFile);
+        imagePacker.release();
+        pixelMap.release();
+      }
+
+      // 5. 更新 Map，触发界面刷新
+      this.thumbnailMap.set(videoUri, thumbPath);
+    } catch (err) {
+      console.error(`生成缩略图失败 ${videoUri}: ${err}`);
+    } finally {
+      // 释放资源
+      if (imageGenerator) {
+        imageGenerator.release();
+      }
+      if (file) {
+        fs.closeSync(file);
+      }
+    }
+  }*/
 
 
 
