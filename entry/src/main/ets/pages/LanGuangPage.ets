@@ -564,6 +564,7 @@ struct LanGuangPage {
     switch (type) {
       case MoreType.REV:
         FunctionHelper.switchRev()
+        this.uiContext.getPromptAction().closeCustomDialog(this.data?.dialogId);
         break
       case MoreType.UNLOCK:
         this.onPressUnlock()

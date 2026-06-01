@@ -8,6 +8,7 @@ export class FunctionHelper{
    */
   public static switchRev(): void {
     const isMirror: boolean = !PlayInfo.mirror;
+    console.log('----------',isMirror)
     if (isMirror) {
       EntryAbility.getInstance().sendUDPCmd(new Uint8Array([0x02]));
     } else {
