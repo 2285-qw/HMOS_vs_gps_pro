@@ -6,6 +6,7 @@ import { MessageWhat } from '../macrochip/constant/MessageWhat';
 import { ProtocolManager } from '../macrochip/Drone/core/protocol/ProtocolManager';
 import { ObjectUtils } from '../utils/ObjectUtils';
 import { CompassView } from '../components/CompassView';
+import { SendEmitterUtil } from '../utils/SendEmitterUtil';
 
 @Entry
 @Component
@@ -22,7 +23,7 @@ export struct MapPage {
   @State radius: number = 500; //圆圈半径
   @State isRotate: boolean = false; //是否旋转
   @State isMoveLocation:Visibility=Visibility.None;//移动我和飞机为中心点显示状态
-  @State isDeleteWaypoint:Visibility=Visibility.None;//删除航点两个view显示状态
+  @Prop isDeleteWaypoint:Visibility=Visibility.None;//删除航点两个view显示状态
   private isOneLocation = true;
   private myMarker?: map.Marker; //我的位置
   private planeMaker?: map.Marker; //无人机位置
@@ -154,6 +155,9 @@ export struct MapPage {
     const eventManager = this.mapController?.getEventManager();
     if (eventManager) {
       eventManager?.on("mapClick", (clickPosition: mapCommon.LatLng) => {
+        if (this.isDeleteWaypoint!=Visibility.Visible) {
+          return
+        }
         //圈内点击事件
         //判断点击位置是否在圈内
         if (this.isPointInCircle(clickPosition)) {
@@ -389,6 +393,25 @@ export struct MapPage {
       .justifyContent(FlexAlign.Center)
       .alignItems(VerticalAlign.Center)   // 垂直居中   // 水平居中
       .visibility(this.isMoveLocation)
+      Image($r('app.media.ic_map_point_fly')).width(50).height(50).alignRules({
+        right:{
+          anchor:"__container__",align:HorizontalAlign.End
+        },
+        bottom: {
+          anchor: "__container__", align: VerticalAlign.Bottom
+        }
+      }).margin({right:110,bottom:30}).visibility(this.isDeleteWaypoint).onClick(()=>{
+        if (this.addedMarkers.length>0) {
+          console.log("------------------dqq")
+          //航点数据列表
+          SendEmitterUtil.sendEventMapPoint(MessageWhat.MESSAGE_WAYPOINT, this.addedMarkers)
+          SendEmitterUtil.sendEventObject(MessageWhat.MESSAGE_WAYPOINT, this.addedMarkers)
+          console.log("------------------dqq11111111112222")
+        }
+
+      })
+
+
 
 
 

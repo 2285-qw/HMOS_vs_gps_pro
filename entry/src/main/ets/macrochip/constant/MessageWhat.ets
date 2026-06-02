@@ -6,4 +6,5 @@ export class MessageWhat {
   public static   MESSAGE_PLANE_LOCATION:number = 60003; //飞机位置信息
   public static   MESSAGE_PHONE_ROTATION_ANGLE:number = 60004; //手机旋转角度
   public static   MESSAGE_PHOTOS:number = 60005; //拍照
+  public static   MESSAGE_WAYPOINT:number = 60006; //航点数据
 }

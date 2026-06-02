@@ -22,7 +22,7 @@ import { SendHyControlThread } from '../macrochip/thread/SendHyControlThread';
 import { App, ComponentContent, router, UIContext } from '@kit.ArkUI';
 import { SlideUnLockView } from '../macrochip/components/SlideUnLockView';
 import { buildText } from '../macrochip/Dialog/sliderDialog';
-import { Params, Type } from '../macrochip/Dialog/DialogDataType/Params';
+import { Params, ParamsBuilder, Type } from '../macrochip/Dialog/DialogDataType/Params';
 import { buildLeftMore } from '../macrochip/Dialog/LeftMoreDialog';
 import { MoreParams } from '../macrochip/Dialog/DialogDataType/MoreParams';
 import { MoreType } from '../macrochip/More/MoreType';
@@ -51,6 +51,11 @@ import { buildShootingSelectionDialog } from '../macrochip/Dialog/ShootingSelect
 import { ShootingSelectionParams, ShootingType } from '../macrochip/Dialog/DialogDataType/ShootingSelectionParams';
 import { Utils } from '../macrochip/utils/Utils';
 import { RouteHelper } from '../macrochip/utils/RouteHelper';
+import { PageNewSendData } from '../macrochip/Drone/core/protocol/PageNewSendData';
+import { map } from '@kit.MapKit';
+import { LGFlyLineBean } from '../macrochip/mode/LGFlyLineBean';
+import { AnimType, SlideAnimParams, SlideAnimParamsBuilder } from '../macrochip/Dialog/DialogDataType/SlideAnimParams';
+import { buildSlideAnim } from '../macrochip/Dialog/SlideAnimDialog';
 
 
 @Entry
@@ -69,8 +74,9 @@ struct LanGuangPage {
   @State rightDrawerSelectedType: SettingType = SettingType.DATA;
   @State isExpanded: boolean = false; //层级显示
   @State isMap: boolean = false; //是否显示地图
-  textTimerController: TextTimerController = new TextTimerController()//计时器控件
+  textTimerController: TextTimerController = new TextTimerController() //计时器控件
   @State format: string = 'mm:ss.SS'
+  @State isDeleteWaypoint: Visibility = Visibility.None; //删除航点两个view显示状态
   //参数变量
   private lastBatPer: number = 101;
   private showDefaultMessage: boolean = true;
@@ -86,12 +92,15 @@ struct LanGuangPage {
   private lgFollowThread?: LgFollowThread;
   private data?: MoreParams; //左侧列表数据
   private isRecord: boolean = false; //是否录制中
-  private file:fs.File| null = null;//录像文件
+  private file: fs.File | null = null; //录像文件
+  @State flyHeight: number = 0; //高度
 
   build() {
     Stack() {
       RelativeContainer() {
-        MapPage()
+        MapPage({
+          isDeleteWaypoint: this.isDeleteWaypoint
+        })
           .zIndex(this.isExpanded ? 2 : 3)
           .width(this.isExpanded ? '100%' : 160)
           .height(this.isExpanded ? '100%' : 80)
@@ -212,24 +221,27 @@ struct LanGuangPage {
               // 打开弹窗（非模态，不抢占焦点）
 
               let wrappedBuilder = wrapBuilder<[Params]>(buildText)
-              let data: Params = new Params('1111', (type: Type) => {
-                console.log('解锁成功，执行起飞操作！类型：', type);
-                // 这里可以添加解锁后的具体逻辑，比如执行起飞操作
-                //解锁
-                this.onPressUnlock()
 
-                //起飞
-                setTimeout(() => {
-                  this.sendHyControlThread?.setToLandValue(0);
-                  this.sendHyControlThread?.setToFlyValue(1);
-                }, 200);
+              let data: Params = new ParamsBuilder().setTitle("请确认是否自动起飞")
+                .setText("请确保飞行器处于水平地面，请勿在狭窄空间\\\\n人群中或者建筑物旁起飞，手切勿触碰螺旋桨")
+                .setOnSuccess((type: Type) => {
+                  //起飞
+                  console.log('解锁成功，执行起飞操作！类型：', type);
+                  // 这里可以添加解锁后的具体逻辑，比如执行起飞操作
+                  //解锁
+                  this.onPressUnlock()
 
-                setTimeout(() => {
-                  this.sendHyControlThread?.setToFlyValue(0);
-                }, 1000);
+                  //起飞
+                  setTimeout(() => {
+                    this.sendHyControlThread?.setToLandValue(0);
+                    this.sendHyControlThread?.setToFlyValue(1);
+                  }, 200);
 
+                  setTimeout(() => {
+                    this.sendHyControlThread?.setToFlyValue(0);
+                  }, 1000);
 
-              }, this.uiContext)
+                }).build()
               const customContent = new ComponentContent(
                 this.uiContext, // 传入UIContext
                 wrappedBuilder, // @Builder函数
@@ -308,20 +320,21 @@ struct LanGuangPage {
         .onClick(() => {
           if (this.isMap) {
             this.isExpanded = !this.isExpanded;
+            this.isDeleteWaypoint = Visibility.None
           } else {
             this.isMap = true
           }
         });
 
         //右侧拍照录像部分控件
-        Column({space:10}) {
+        Column({ space: 10 }) {
           Image($r('app.media.ic_camera_mode_photo')).width(30).height(30).objectFit(ImageFit.ScaleDown)
-            .onClick(()=>{
-             // this.ShootingMoreDialog()
-              if (this.currentMode==Mode.RECORD) {
-                this.currentMode=Mode.PHOTO
-              }else {
-                this.currentMode=Mode.RECORD
+            .onClick(() => {
+              // this.ShootingMoreDialog()
+              if (this.currentMode == Mode.RECORD) {
+                this.currentMode = Mode.PHOTO
+              } else {
+                this.currentMode = Mode.RECORD
               }
             })
           //拍照录像按钮
@@ -332,7 +345,7 @@ struct LanGuangPage {
             if (this.currentMode === Mode.PHOTO) {
               console.info("拍照");
               // 在这里调用拍照逻辑
-              Utils.sendEvent(ProtocolManager.getInstance().getProtocol(),MessageWhat.MESSAGE_PHOTOS)
+              Utils.sendEvent(ProtocolManager.getInstance().getProtocol(), MessageWhat.MESSAGE_PHOTOS)
             } else if (this.currentMode === Mode.RECORD) {
               // 录像模式：点击开始/停止录像
               this.isRecording = !this.isRecording;
@@ -340,9 +353,11 @@ struct LanGuangPage {
 
               if (this.isRecording) {
                 const now = new Date();
-                const timestampName = `${now.getFullYear()}${(now.getMonth() + 1).toString().padStart(2, '0')}${now.getDate()}_${now.getHours()}${(now.getMinutes()).toString().padStart(2, '0')}${now.getSeconds()}`;
-                const name = 'video_'+ timestampName;
-                const  targetPath = `${getContext().filesDir}/Video/${name}.mp4`;
+                const timestampName = `${now.getFullYear()}${(now.getMonth() + 1).toString()
+                  .padStart(2, '0')}${now.getDate()}_${now.getHours()}${(now.getMinutes()).toString()
+                  .padStart(2, '0')}${now.getSeconds()}`;
+                const name = 'video_' + timestampName;
+                const targetPath = `${getContext().filesDir}/Video/${name}.mp4`;
                 this.file = fs.openSync(targetPath, fs.OpenMode.CREATE | fs.OpenMode.READ_WRITE);
                 let fd = this.file.fd;
                 console.info("开始录像");
@@ -355,8 +370,8 @@ struct LanGuangPage {
                 NapiBuffer.StopRecording();
                 this.textTimerController.pause()
                 this.textTimerController.reset()
-                if (this.file!=null) {
-                  this.saveVideoToGallery( this.file.path)
+                if (this.file != null) {
+                  this.saveVideoToGallery(this.file.path)
                   console.log("视频保存路径", this.file.path)
                 }
               }
@@ -377,7 +392,7 @@ struct LanGuangPage {
             count: 0,
             controller: this.textTimerController
           })
-            .visibility(this.isRecording?Visibility.Visible:Visibility.None)
+            .visibility(this.isRecording ? Visibility.Visible : Visibility.None)
             .format(this.format)
             .fontColor(Color.Black)
             .fontSize(8)
@@ -386,7 +401,7 @@ struct LanGuangPage {
             })
 
           Image($r('app.media.icon_album')).width(30).height(30).objectFit(ImageFit.ScaleDown)
-            .onClick(()=>{
+            .onClick(() => {
               // this.ShootingMoreDialog()
               RouteHelper.pushUrl('pages/MediaAlbum')
             })
@@ -402,8 +417,6 @@ struct LanGuangPage {
         .margin({ right: 10, top: 0 })
         .height('80%')
         .width(60)
-
-
 
       }.width('100%')
       .height('100%')
@@ -542,49 +555,87 @@ struct LanGuangPage {
   //左侧更多弹窗
   leftMoreDialog() {
     let wrappedBuilder = wrapBuilder<[MoreParams]>(buildLeftMore)
-    this.data = new MoreParams(this.uiContext, (id: number) => {
-      this.onLeftMoreOnClick(id);
-    })
-    this.data.getType()
-    const customContent = new ComponentContent(
-      this.uiContext, // 传入UIContext
-      wrappedBuilder, // @Builder函数
-      this.data
-    );
-    this.data.dialogId = customContent;
-
-    this.uiContext.getPromptAction().openCustomDialog(customContent, {
-      alignment: DialogAlignment.Center
-    })
+    if (this.data==undefined) {
+      this.data = new MoreParams(this.uiContext, (id: number) => {
+        this.onLeftMoreOnClick(id);
+      })
+      this.data.getType()
+    }
+    if (this.data) {
+      const customContent = new ComponentContent(
+        this.uiContext, // 传入UIContext
+        wrappedBuilder, // @Builder函数
+        this.data
+      );
+      this.data.dialogId = customContent;
+      this.uiContext.getPromptAction().openCustomDialog(customContent, {
+        alignment: DialogAlignment.Center
+      })
+    }
   }
 
   //左侧更多按钮点击
   onLeftMoreOnClick(id: number) {
     let type = this.data?.arrMoreBean[id].getType();
+    this.uiContext.getPromptAction().closeCustomDialog(this.data?.dialogId);
+    console.log("---------------oooooooo", type)
     switch (type) {
       case MoreType.REV:
         FunctionHelper.switchRev()
-        this.uiContext.getPromptAction().closeCustomDialog(this.data?.dialogId);
         break
       case MoreType.UNLOCK:
         this.onPressUnlock()
         break
       case MoreType.FOLLOW:
-        //跟随
-        if (this.lgFollowThread == undefined) {
-          this.lgFollowThread = new LgFollowThread();
-        }
 
         if (this.data?.arrMoreBean[id].isSelected()) {
           //关闭跟随
           this.lgFollowThread?.stopFollowTimer();
+          this.data?.arrMoreBean[id].setSelected(!this.data?.arrMoreBean[id].isSelected());
         } else {
           //开启跟随
-          this.lgFollowThread?.sendFollowData();
+          //Gps跟随
+          let wrappedBuilder = wrapBuilder<[SlideAnimParams]>(buildSlideAnim)
+          let data: SlideAnimParams = new SlideAnimParamsBuilder()
+            .setAnimType(AnimType.FOLLOW_GPS)
+            .setOnSuccess((type: Type) => {
+              this.uiContext.getPromptAction().closeCustomDialog(data.dialogId)
+              if (type == Type.SLIDE) {
+                //跟随
+                if (this.lgFollowThread == undefined) {
+                  this.lgFollowThread = new LgFollowThread();
+                }
+                //开启跟随
+                this.lgFollowThread?.sendFollowData();
+
+                this.data?.arrMoreBean[id].setSelected(!this.data?.arrMoreBean[id].isSelected());
+                this.data?.dialogId?.update(this.data)
+              }
+            })
+            .build()
+
+          const customContent = new ComponentContent(
+            this.uiContext, // 传入UIContext
+            wrappedBuilder, // @Builder函数
+            data
+          );
+          data.dialogId = customContent;
+          this.uiContext.getPromptAction().openCustomDialog(customContent, {
+            alignment: DialogAlignment.Center
+          })
         }
 
-        this.data?.arrMoreBean[id].setSelected(!this.data?.arrMoreBean[id].isSelected());
-        this.data?.dialogId?.update(this.data)
+
+        break
+      case MoreType.POINT:
+        //多点
+
+        this.isMap = true
+        this.isExpanded = true;
+        this.isDeleteWaypoint = Visibility.Visible
+        break
+      case MoreType.FOLLOW:
+        console.log("---------------oooooooo")
 
 
         break
@@ -596,19 +647,19 @@ struct LanGuangPage {
   //拍照模式选择弹窗
   ShootingMoreDialog() {
     let wrappedBuilder = wrapBuilder<[ShootingSelectionParams]>(buildShootingSelectionDialog)
-   let data = new ShootingSelectionParams(this.uiContext, (id: ShootingType) => {
+    let data = new ShootingSelectionParams(this.uiContext, (id: ShootingType) => {
 
     })
     const customContent = new ComponentContent(
       this.uiContext, // 传入UIContext
       wrappedBuilder, // @Builder函数
-     data
+      data
     );
-   data.dialogId = customContent;
+    data.dialogId = customContent;
 
     this.uiContext.getPromptAction().openCustomDialog(customContent, {
       alignment: DialogAlignment.CenterEnd,
-      offset: { dx: -80, dy: 0 },       // 可选：微调位置，负值向左偏移
+      offset: { dx: -80, dy: 0 }, // 可选：微调位置，负值向左偏移
     })
   }
 
@@ -624,17 +675,20 @@ struct LanGuangPage {
     // 持续订阅
     emitter.on({ eventId: Protocol.LAN_GUANG }, (eventData: emitter.GenericEventData<PageSendData>) => {
       console.log("收到蓝光功能字信息:", JSON.stringify(eventData));
-
       if (eventData.data?.modeType == ModeType.FlightControl) {
         //飞控数据
         this.onData(eventData.data)
-      } else if (eventData.data?.modeType == ModeType.Page) {
-        //页面数据
-        this.onMessage(eventData.data)
       }
+    });
 
+    //订阅页面数据和底层数据区分开
+    emitter.on({ eventId: ModeType.Page }, (eventData: emitter.GenericEventData<PageNewSendData<Object>>) => {
+      console.log("收到蓝光功能字信息:", JSON.stringify(eventData));
+      //页面数据
+      this.onNewMessage(eventData.data)
 
     });
+
 
     this.sendHyControlThread = new SendHyControlThread();
     this.sendHyControlThread.start();
@@ -709,6 +763,8 @@ struct LanGuangPage {
   aboutToDisappear(): void {
     //取消订阅
     emitter.off(Protocol.LAN_GUANG)
+    //取消订阅
+    emitter.off(ModeType.Page)
     this.sendHyControlThread?.cancel();
     // 3. 结束时取消定位监听
     geoLocationManager.off('locationChange', this.callback);
@@ -864,8 +920,8 @@ struct LanGuangPage {
 
   }
 
-  onMessage(pageSendData: PageSendData) {
-    switch (pageSendData.type) {
+  onNewMessage(pageSendData?: PageNewSendData<Object>) {
+    switch (pageSendData?.type) {
       case MessageWhat.MESSAGE_HORIZONTAL_CALIBRATION:
         //水平校准
         this.sendHyControlThread?.setLevelCor(1)
@@ -884,11 +940,77 @@ struct LanGuangPage {
           this.sendHyControlThread?.setMagCor(0)
         }, 1000); // 1000毫秒 = 1秒
         break
+      case MessageWhat.MESSAGE_WAYPOINT:
+        //航点数据
+        //  pageSendData.addedMarkers?
+        // 打开弹窗（非模态，不抢占焦点）
+
+        let wrappedBuilder = wrapBuilder<[Params]>(buildText)
+        let data: Params = new ParamsBuilder().setTitle("请确认是否航点飞行")
+          .setText("请确保航点位置安全，避免飞行器撞击建筑物，防止飞行器丢失")
+          .setTitleImg($r('app.media.ic_unlock_point'))
+          .setOnSuccess((type: Type) => {
+            this.uiContext.getPromptAction().closeCustomDialog(data.dialogId)
+            if (type == Type.SLIDE) {
+              let addedMarkers: map.Marker[] = pageSendData.value as map.Marker[]; // 存储已添加的标记点
+              this.sendPointData(addedMarkers);
+            }
+          })
+          .build()
+
+        const customContent = new ComponentContent(
+          this.uiContext, // 传入UIContext
+          wrappedBuilder, // @Builder函数
+          data
+        );
+        data.dialogId = customContent;
+        this.uiContext.getPromptAction().openCustomDialog(customContent, {
+          alignment: DialogAlignment.Center
+        })
+
+
+        break
+    }
+  }
+
+  //发送航点数据
+  async sendPointData(addedMarkers: map.Marker[]) {
+    for (let i = 0; i < addedMarkers.length; i++) {
+      // 构建固定头部 16 字节数组
+      let data = new Uint8Array(16);
+      data[0] = 0x68;
+      data[1] = 0x04;
+      data[2] = 0x0c;
+
+      // 填充航点参数
+      let bean = new LGFlyLineBean();
+      bean.PointGpsLon = Math.floor(addedMarkers[i].getPosition().longitude * 10000000);
+      bean.PointGpsLat = Math.floor(addedMarkers[i].getPosition().latitude * 10000000);
+      bean.PointNum = i;
+      bean.PointAltitude = Math.floor(this.flyHeight * 10);
+      bean.PointSpeed = 4;
+      bean.PointTime = 0;
+      // 调用转换函数，假设返回 Uint8Array
+      let newData = LanGuangAnalysis.getInstance().convertFlyLine(bean);
+      // 将转换后的数据复制到 data 的索引 3 开始的位置
+      data.set(newData, 3);
+
+      // 计算校验和（异或）
+      let xor: number = data[1];
+      for (let j = 2; j <= 14; j++) {
+        xor ^= data[j];
+      }
+      data[15] = xor;
+
+      // 发送 TCP 命令
+      EntryAbility.getInstance().sendUDPCmd(data);
+      // 等待 50ms
+      await sleep(50);
     }
   }
 
   //可成功保存沙盒路径文件到相册
-  async saveVideoToGallery( fileFd: string) {
+  async saveVideoToGallery(fileFd: string) {
     const context = getContext() as common.UIAbilityContext;
     let photoAccessHelperObj = photoAccessHelper.getPhotoAccessHelper(context);
     // 1. 创建媒体资源变更请求
@@ -905,4 +1027,6 @@ struct LanGuangPage {
 }
 
 
-
+function sleep(arg0: number) {
+  throw new Error('Function not implemented.');
+}

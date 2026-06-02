@@ -10,6 +10,7 @@ import { LGInfo3HyBean } from '../../macrochip/mode/LGInfo3HyBean';
 import { LGInfo3BHyBean } from '../../macrochip/mode/LGInfo3BHyBean';
 import { LGTestBean } from '../../macrochip/mode/LGTestBean';
 import { AnalysisUtils } from './AnalysisUtils';
+import { LGFlyLineBean } from '../mode/LGFlyLineBean';
 
 /**
  * 蓝光无人机数据解析类
@@ -39,7 +40,6 @@ export class LanGuangAnalysis {
   }
 
 
-
   /**
    * 解析无人机状态数据为LGPlaneHyBean
    * @param data 二进制数据
@@ -56,105 +56,105 @@ export class LanGuangAnalysis {
     // 解析数据，基于位位置
     // 注意：由于parseBits方法会修改bits数组，我们使用一个索引来跟踪当前位置
     // 每次调用parseBits后，bits数组会被修改，移除已解析的元素
-    
+
     // AttitudeRoll: short (16 bits)
     droneStatus.AttitudeRoll = AnalysisUtils.parseBits(bits, 16);
 
     // AttitudePitch: short (16 bits)
-    droneStatus.AttitudePitch =AnalysisUtils.parseBits(bits, 16);
+    droneStatus.AttitudePitch = AnalysisUtils.parseBits(bits, 16);
 
     // AttitudeYaw: short (16 bits)
-    droneStatus.AttitudeYaw =AnalysisUtils.parseBits(bits,  16);
+    droneStatus.AttitudeYaw = AnalysisUtils.parseBits(bits, 16);
 
     // InsInitOk: 0或1 (1 bit)
-    droneStatus.InsInitOk =AnalysisUtils.parseBits(bits, 1);
+    droneStatus.InsInitOk = AnalysisUtils.parseBits(bits, 1);
 
     // BaroInitOk: 0或1 (1 bit)
-    droneStatus.BaroInitOk =AnalysisUtils.parseBits(bits,  1);
+    droneStatus.BaroInitOk = AnalysisUtils.parseBits(bits, 1);
 
     // MagInitOk: 0或1 (1 bit)
-    droneStatus.MagInitOk =AnalysisUtils.parseBits(bits,  1);
+    droneStatus.MagInitOk = AnalysisUtils.parseBits(bits, 1);
 
     // GpsInitOk: 0或1 (1 bit)
-    droneStatus.GpsInitOk =AnalysisUtils.parseBits(bits , 1);
+    droneStatus.GpsInitOk = AnalysisUtils.parseBits(bits, 1);
 
     // FlowInitOk: 0或1 (1 bit)
-    droneStatus.FlowInitOk =AnalysisUtils.parseBits(bits , 1);
+    droneStatus.FlowInitOk = AnalysisUtils.parseBits(bits, 1);
 
     // 预留位 (3 bits，补满1字节)
-   //AnalysisUtils.parseBits(bits , 3);
+    //AnalysisUtils.parseBits(bits , 3);
 
     // InsCalib: 0或1 (1 bit)
-    droneStatus.InsCalib =AnalysisUtils.parseBits(bits , 1);
+    droneStatus.InsCalib = AnalysisUtils.parseBits(bits, 1);
 
     // MagXYCalib: 0或1 (1 bit)
-    droneStatus.MagXYCalib =AnalysisUtils.parseBits(bits , 1);
+    droneStatus.MagXYCalib = AnalysisUtils.parseBits(bits, 1);
 
     // MagZCalib: 0或1 (1 bit)
-    droneStatus.MagZCalib =AnalysisUtils.parseBits(bits , 1);
+    droneStatus.MagZCalib = AnalysisUtils.parseBits(bits, 1);
 
     // CalibProgress: 0~100 (7 bits)
-    droneStatus.CalibProgress =AnalysisUtils.parseBits(bits , 7);
+    droneStatus.CalibProgress = AnalysisUtils.parseBits(bits, 7);
 
     // BatVal: 0~100 (7 bits)
-    droneStatus.BatVal =AnalysisUtils.parseBits(bits , 7);
+    droneStatus.BatVal = AnalysisUtils.parseBits(bits, 7);
 
     // LowBat: 0~2 (2 bits)
-    droneStatus.LowBat =AnalysisUtils.parseBits(bits , 2);
+    droneStatus.LowBat = AnalysisUtils.parseBits(bits, 2);
 
     // TempOver: 0或1 (1 bit)
-    droneStatus.TempOver =AnalysisUtils.parseBits(bits , 1);
+    droneStatus.TempOver = AnalysisUtils.parseBits(bits, 1);
 
     // CurrOver: 0~2 (2 bits)
-    droneStatus.CurrOver =AnalysisUtils.parseBits(bits , 2);
+    droneStatus.CurrOver = AnalysisUtils.parseBits(bits, 2);
 
     // Armed: 0~2 (2 bits)
-    droneStatus.Armed =AnalysisUtils.parseBits(bits , 2);
+    droneStatus.Armed = AnalysisUtils.parseBits(bits, 2);
 
     // FlyMode: 0~4 (3 bits)
-    droneStatus.FlyMode =AnalysisUtils.parseBits(bits , 4);
+    droneStatus.FlyMode = AnalysisUtils.parseBits(bits, 4);
 
     // GoHomeStatu: 0~5 (3 bits)
-    droneStatus.GoHomeStatu =AnalysisUtils.parseBits(bits , 3);
+    droneStatus.GoHomeStatu = AnalysisUtils.parseBits(bits, 3);
 
     // Photo: 0或1 (1 bit)
-    droneStatus.Photo =AnalysisUtils.parseBits(bits , 1);
+    droneStatus.Photo = AnalysisUtils.parseBits(bits, 1);
 
     // Camera: 0或1 (1 bit)
-    droneStatus.Camera =AnalysisUtils.parseBits(bits , 1);
+    droneStatus.Camera = AnalysisUtils.parseBits(bits, 1);
 
     // VideoOn: 0或1 (1 bit)
-    droneStatus.VideoOn =AnalysisUtils.parseBits(bits , 1);
+    droneStatus.VideoOn = AnalysisUtils.parseBits(bits, 1);
 
     // Takeoff: 0或1 (1 bit)
-    droneStatus.Takeoff =AnalysisUtils.parseBits(bits , 1);
+    droneStatus.Takeoff = AnalysisUtils.parseBits(bits, 1);
 
     // AutoLand: 0或1 (1 bit)
-    droneStatus.AutoLand =AnalysisUtils.parseBits(bits , 1);
+    droneStatus.AutoLand = AnalysisUtils.parseBits(bits, 1);
 
     // LandFinish: 0或1 (1 bit)
-    droneStatus.LandFinish =AnalysisUtils.parseBits(bits , 1);
+    droneStatus.LandFinish = AnalysisUtils.parseBits(bits, 1);
 
     // GpsNum: 0~31 (5 bits)
-    droneStatus.GpsNum =AnalysisUtils.parseBits(bits , 5);
+    droneStatus.GpsNum = AnalysisUtils.parseBits(bits, 5);
 
     // GpsFine: 0或1 (1 bit)
-    droneStatus.GpsFine =AnalysisUtils.parseBits(bits , 1);
+    droneStatus.GpsFine = AnalysisUtils.parseBits(bits, 1);
 
     // GpsQuality: 0~100 (7 bits)
-    droneStatus.GpsQuality =AnalysisUtils.parseBits(bits , 7);
+    droneStatus.GpsQuality = AnalysisUtils.parseBits(bits, 7);
 
     // modeGps: 0~2 (2 bits)
-    droneStatus.modeGps =AnalysisUtils.parseBits(bits , 2);
+    droneStatus.modeGps = AnalysisUtils.parseBits(bits, 2);
 
     // RcFastMode: 0~3 (2 bits)
-    droneStatus.RcFastMode =AnalysisUtils.parseBits(bits , 2);
+    droneStatus.RcFastMode = AnalysisUtils.parseBits(bits, 2);
 
     // PTZadj: 0~2 (2 bits)
-    droneStatus.PTZadj =AnalysisUtils.parseBits(bits , 2);
+    droneStatus.PTZadj = AnalysisUtils.parseBits(bits, 2);
 
     // Brightness: 0~2 (2 bits)
-    droneStatus.Brightness =AnalysisUtils.parseBits(bits , 2);
+    droneStatus.Brightness = AnalysisUtils.parseBits(bits, 2);
 
     return droneStatus;
   }
@@ -175,7 +175,7 @@ export class LanGuangAnalysis {
     // 解析数据，基于位位置
     // 注意：由于parseBits方法会修改bits数组，我们使用一个索引来跟踪当前位置
     // 每次调用parseBits后，bits数组会被修改，移除已解析的元素
-    
+
     // MagInterference: 地磁环境干扰量0-1000 (10 bits)
     sjHyInfo9C.MagInterference = AnalysisUtils.parseBits(bits, 10);
 
@@ -282,7 +282,7 @@ export class LanGuangAnalysis {
     // 解析数据，基于位位置
     // 注意：由于parseBits方法会修改bits数组，我们使用一个索引来跟踪当前位置
     // 每次调用parseBits后，bits数组会被修改，移除已解析的元素
-    
+
     // AirplaneLon: 飞机GPS经度 1 / 10000 000 deg (32 bits)
     gpsBean.AirplaneLon = AnalysisUtils.parseBits(bits, 32);
 
@@ -320,7 +320,7 @@ export class LanGuangAnalysis {
     // 解析数据，基于位位置
     // 注意：由于parseBits方法会修改bits数组，我们使用一个索引来跟踪当前位置
     // 每次调用parseBits后，bits数组会被修改，移除已解析的元素
-    
+
     // PointNum: 航点应答数据，表示收到第几个航点 (8 bits)
     flyLineBean.PointNum = AnalysisUtils.parseBits(bits, 8);
 
@@ -343,7 +343,7 @@ export class LanGuangAnalysis {
     // 解析数据，基于位位置
     // 注意：由于parseBits方法会修改bits数组，我们使用一个索引来跟踪当前位置
     // 每次调用parseBits后，bits数组会被修改，移除已解析的元素
-    
+
     // MagInterference: 地磁环境干扰量0-1000 (10 bits)
     info3HyBean.MagInterference = AnalysisUtils.parseBits(bits, 10);
 
@@ -372,7 +372,7 @@ export class LanGuangAnalysis {
     // 解析数据，基于位位置
     // 注意：由于parseBits方法会修改bits数组，我们使用一个索引来跟踪当前位置
     // 每次调用parseBits后，bits数组会被修改，移除已解析的元素
-    
+
     // MagInterference: 地磁环境干扰量0-1000 (10 bits)
     info3BHyBean.MagInterference = AnalysisUtils.parseBits(bits, 10);
 
@@ -425,7 +425,7 @@ export class LanGuangAnalysis {
     // 解析数据，基于位位置
     // 注意：由于parseBits方法会修改bits数组，我们使用一个索引来跟踪当前位置
     // 每次调用parseBits后，bits数组会被修改，移除已解析的元素
-    
+
     // gyro_x: 陀螺仪X轴 -32767~32767 (16 bits)
     testBean.gyro_x = AnalysisUtils.parseBits(bits, 16);
 
@@ -526,7 +526,7 @@ export class LanGuangAnalysis {
     // 解析数据，基于位位置
     // 注意：由于parseBits方法会修改bits数组，我们使用一个索引来跟踪当前位置
     // 每次调用parseBits后，bits数组会被修改，移除已解析的元素
-    
+
     // AirplaneLon: 飞机GPS经度 1 / 10000 000 deg (32 bits)
     gpsBean2.AirplaneLon = AnalysisUtils.parseBits(bits, 32);
 
@@ -649,7 +649,7 @@ export class LanGuangAnalysis {
     // 解析数据，基于位位置
     // 注意：由于parseBits方法会修改bits数组，我们使用一个索引来跟踪当前位置
     // 每次调用parseBits后，bits数组会被修改，移除已解析的元素
-    
+
     // Acc: 加速度传感器数据，3个int16_t，每个16 bits
     for (let i = 0; i < 3; i++) {
       hyInfo9BBean.Acc[i] = AnalysisUtils.parseBits(bits, 16);
@@ -692,5 +692,21 @@ export class LanGuangAnalysis {
     }
 
     return hyInfo9BBean;
+  }
+
+
+  //
+  public convertFlyLine(bean: LGFlyLineBean): Uint8Array {
+    const buffer = new ArrayBuffer(24); // 6个字段 * 4字节 = 24
+    const view = new DataView(buffer);
+
+    view.setFloat32(0, bean.PointGpsLon, true); // 小端
+    view.setFloat32(4, bean.PointGpsLat, true);
+    view.setInt32(8, bean.PointNum, true);
+    view.setInt32(12, bean.PointAltitude, true);
+    view.setInt32(16, bean.PointSpeed, true);
+    view.setInt32(20, bean.PointTime, true);
+
+    return new Uint8Array(buffer);
   }
 }
