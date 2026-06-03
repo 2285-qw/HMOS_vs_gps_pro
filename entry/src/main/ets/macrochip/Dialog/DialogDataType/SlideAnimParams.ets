@@ -4,6 +4,7 @@ export class SlideAnimParams {
   title?: string = '请确认是否自动起飞'
   text?: string = "'请确保飞行器处于水平地面，请勿在狭窄空间\\n人群中或者建筑物旁起飞，手切勿触碰螺旋桨'";
   titleImg?: Resource = $r('app.media.ic_unlock_fly')
+  slideText?: string = "向右滑动开始"
   // 定义图片资源数组 (推荐方式)
   images: ImageFrameInfo[] = [
     { src: $r('app.media.img_anim_gps_follow_0') },
@@ -38,7 +39,8 @@ export class SlideAnimParams {
   onSuccess?: (type: Type) => void;
   animType?: AnimType;
 
-  constructor(title?: string, text?: string, titleImg?: Resource, animType?: AnimType, onSuccess?: (type: Type) => void,
+  constructor(title?: string, text?: string, titleImg?: Resource, animType?: AnimType, slideText?: string,
+    onSuccess?: (type: Type) => void,
     uiContext?: UIContext) {
     this.title = title;
     this.text = text;
@@ -85,7 +87,6 @@ export class SlideAnimParamsBuilder {
   }
 
 
-
   setAnimType(animType: AnimType) {
     if (animType == AnimType.FOLLOW_GPS) {
       this.title = "提示"
@@ -117,6 +118,39 @@ export class SlideAnimParamsBuilder {
         { src: $r('app.media.img_anim_gps_follow_23') },
         { src: $r('app.media.img_anim_gps_follow_24') },
         { src: $r('app.media.img_anim_gps_follow_25') },
+      ];
+    } else if (animType == AnimType.FLY_SURROUND) {
+      this.title = "请设置环绕参数"
+      this.text = "环绕时控制左方向杆或右方向杆来改变飞行器的顺时针飞行或逆时针飞行。\\n环绕时控制前进方向杆或后退方向杆来改变飞行器的环绕半径大小"
+      this.slideText = "向右滑动飞行"
+
+      this.images = [
+        { src: $r('app.media.img_anim_circle_0') },
+        { src: $r('app.media.img_anim_circle_1') },
+        { src: $r('app.media.img_anim_circle_2') },
+        { src: $r('app.media.img_anim_circle_3') },
+        { src: $r('app.media.img_anim_circle_4') },
+        { src: $r('app.media.img_anim_circle_5') },
+        { src: $r('app.media.img_anim_circle_6') },
+        { src: $r('app.media.img_anim_circle_7') },
+        { src: $r('app.media.img_anim_circle_8') },
+        { src: $r('app.media.img_anim_circle_9') },
+        { src: $r('app.media.img_anim_circle_10') },
+        { src: $r('app.media.img_anim_circle_11') },
+        { src: $r('app.media.img_anim_circle_12') },
+        { src: $r('app.media.img_anim_circle_13') },
+        { src: $r('app.media.img_anim_circle_14') },
+        { src: $r('app.media.img_anim_circle_15') },
+        { src: $r('app.media.img_anim_circle_16') },
+        { src: $r('app.media.img_anim_circle_17') },
+        { src: $r('app.media.img_anim_circle_18') },
+        { src: $r('app.media.img_anim_circle_19') },
+        { src: $r('app.media.img_anim_circle_20') },
+        { src: $r('app.media.img_anim_circle_21') },
+        { src: $r('app.media.img_anim_circle_22') },
+        { src: $r('app.media.img_anim_circle_23') },
+        { src: $r('app.media.img_anim_circle_24') },
+        { src: $r('app.media.img_anim_circle_25') }
       ];
     }
     return this;
@@ -153,6 +187,9 @@ export class SlideAnimParamsBuilder {
     if (this.images !== undefined) {
       params.images = this.images
     }
+    if (this.slideText != undefined) {
+      params.slideText = this.slideText
+    }
     return params;
   }
 }
@@ -165,6 +202,7 @@ export enum AnimType {
   FLY_SKY,
   FLY_FAR,
   FLY_SPIRAL,
+  FLY_SURROUND
 }
 
 

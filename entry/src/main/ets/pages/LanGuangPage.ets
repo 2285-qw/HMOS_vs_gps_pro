@@ -634,10 +634,36 @@ struct LanGuangPage {
         this.isExpanded = true;
         this.isDeleteWaypoint = Visibility.Visible
         break
-      case MoreType.FOLLOW:
-        console.log("---------------oooooooo")
+      case MoreType.AROUND:
+
+        if (this.data?.arrMoreBean[id].isSelected()) {
+          //关闭环绕
+          this.data?.arrMoreBean[id].setSelected(!this.data?.arrMoreBean[id].isSelected());
+        } else {
+          //开启环绕
+          let wrappedBuilder = wrapBuilder<[SlideAnimParams]>(buildSlideAnim)
+          let data: SlideAnimParams = new SlideAnimParamsBuilder()
+            .setAnimType(AnimType.FLY_SURROUND)
+            .setOnSuccess((type: Type) => {
+              this.uiContext.getPromptAction().closeCustomDialog(data.dialogId)
+              if (type == Type.SLIDE) {
 
 
+                this.data?.arrMoreBean[id].setSelected(!this.data?.arrMoreBean[id].isSelected());
+                this.data?.dialogId?.update(this.data)
+              }
+            })
+            .build()
+          const customContent = new ComponentContent(
+            this.uiContext, // 传入UIContext
+            wrappedBuilder, // @Builder函数
+            data
+          );
+          data.dialogId = customContent;
+          this.uiContext.getPromptAction().openCustomDialog(customContent, {
+            alignment: DialogAlignment.Center
+          })
+        }
         break
 
     }

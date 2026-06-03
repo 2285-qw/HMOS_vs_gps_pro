@@ -25,7 +25,7 @@ export function buildSlideAnim(params: SlideAnimParams) {
       componentWidth:260,
       componentHeight:30,
       slideCoverColor: '#00FF00',
-      slideText: '向右滑动解锁',
+      slideText: params.slideText,
       slideTextSize: 14,
       slideTextColor: '#FFFFFF',
       slideCover: false,
