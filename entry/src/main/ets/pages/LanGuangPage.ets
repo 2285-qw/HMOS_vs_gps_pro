@@ -225,21 +225,23 @@ struct LanGuangPage {
               let data: Params = new ParamsBuilder().setTitle("请确认是否自动起飞")
                 .setText("请确保飞行器处于水平地面，请勿在狭窄空间\\\\n人群中或者建筑物旁起飞，手切勿触碰螺旋桨")
                 .setOnSuccess((type: Type) => {
-                  //起飞
-                  console.log('解锁成功，执行起飞操作！类型：', type);
-                  // 这里可以添加解锁后的具体逻辑，比如执行起飞操作
-                  //解锁
-                  this.onPressUnlock()
+                  if (type==Type.SLIDE) {
+                    //起飞
+                    console.log('解锁成功，执行起飞操作！类型：', type);
+                    // 这里可以添加解锁后的具体逻辑，比如执行起飞操作
+                    //解锁
+                    this.onPressUnlock()
 
-                  //起飞
-                  setTimeout(() => {
-                    this.sendHyControlThread?.setToLandValue(0);
-                    this.sendHyControlThread?.setToFlyValue(1);
-                  }, 200);
+                    //起飞
+                    setTimeout(() => {
+                      this.sendHyControlThread?.setToLandValue(0);
+                      this.sendHyControlThread?.setToFlyValue(1);
+                    }, 200);
 
-                  setTimeout(() => {
-                    this.sendHyControlThread?.setToFlyValue(0);
-                  }, 1000);
+                    setTimeout(() => {
+                      this.sendHyControlThread?.setToFlyValue(0);
+                    }, 1000);
+                  }
 
                 }).build()
               const customContent = new ComponentContent(
@@ -555,7 +557,7 @@ struct LanGuangPage {
   //左侧更多弹窗
   leftMoreDialog() {
     let wrappedBuilder = wrapBuilder<[MoreParams]>(buildLeftMore)
-    if (this.data==undefined) {
+    if (this.data == undefined) {
       this.data = new MoreParams(this.uiContext, (id: number) => {
         this.onLeftMoreOnClick(id);
       })
@@ -638,6 +640,12 @@ struct LanGuangPage {
 
         if (this.data?.arrMoreBean[id].isSelected()) {
           //关闭环绕
+          this.sendHyControlThread?.setCancelValue(1)
+          setTimeout(() => {
+            // 执行异步任务（如更新UI状态）
+            this.sendHyControlThread?.setCancelValue(0)
+          }, 1000); // 1000毫秒 = 1秒
+
           this.data?.arrMoreBean[id].setSelected(!this.data?.arrMoreBean[id].isSelected());
         } else {
           //开启环绕
@@ -647,7 +655,11 @@ struct LanGuangPage {
             .setOnSuccess((type: Type) => {
               this.uiContext.getPromptAction().closeCustomDialog(data.dialogId)
               if (type == Type.SLIDE) {
-
+                this.sendHyControlThread?.setAroundValue(1)
+                setTimeout(() => {
+                  // 执行异步任务（如更新UI状态）
+                  this.sendHyControlThread?.setAroundValue(0)
+                }, 1000); // 1000毫秒 = 1秒
 
                 this.data?.arrMoreBean[id].setSelected(!this.data?.arrMoreBean[id].isSelected());
                 this.data?.dialogId?.update(this.data)
@@ -665,28 +677,94 @@ struct LanGuangPage {
           })
         }
         break
+      case MoreType.UNLOCK:
+        this.sendHyControlThread?.setLockValue(1)
+        setTimeout(() => {
+          // 执行异步任务（如更新UI状态）
+          this.sendHyControlThread?.setLockValue(0)
+        }, 1000); // 1000毫秒 = 1秒
+        break
+
+      case MoreType.FAR_FLY:
+        //一键远飞
+        let wrappedBuilder = wrapBuilder<[Params]>(buildText)
+        let data: Params = new ParamsBuilder().setTitle("一键远飞")
+          .setText("开始后，飞行器将远离目标斜着往后退25米左右，注意后面空间，避免造成伤害!若遇紧急情况，立即用遥控器中断飞行!")
+          .setOnSuccess((type: Type) => {
+            if (type==Type.SLIDE) {
+              this.sendHyControlThread?.setFarFly(1)
+              setTimeout(() => {
+                // 执行异步任务（如更新UI状态）
+                this.sendHyControlThread?.setFarFly(0)
+              }, 1000); // 1000毫秒 = 1秒
+            }
+            this.uiContext?.getPromptAction().closeCustomDialog(data.dialogId)
+          }).build()
+        const customContent = new ComponentContent(
+          this.uiContext, // 传入UIContext
+          wrappedBuilder, // @Builder函数
+          data
+        );
+        data.dialogId = customContent;
+        this.uiContext.getPromptAction().openCustomDialog(customContent, {
+          alignment: DialogAlignment.Center
+        })
+        break;
+      case MoreType.SKY_FLY:
+        //冲天功能
+        let wrappedBuilder1 = wrapBuilder<[Params]>(buildText)
+        let data1: Params = new ParamsBuilder().setTitle("一键冲天")
+          .setText("开始后，飞行器将自动上升15米左右，注意上方障碍物，避免造成伤害!若遇紧急情况，立即用遥控器中断飞行!")
+          .setOnSuccess((type: Type) => {
+            if (type==Type.SLIDE) {
+              this.sendHyControlThread?.setSkyFly(1)
+              setTimeout(() => {
+                // 执行异步任务（如更新UI状态）
+                this.sendHyControlThread?.setSkyFly(0)
+              }, 1000); // 1000毫秒 = 1秒
+            }
+            this.uiContext?.getPromptAction().closeCustomDialog(data1.dialogId)
+          }).build()
+        const customContent1 = new ComponentContent(
+          this.uiContext, // 传入UIContext
+          wrappedBuilder1, // @Builder函数
+          data1
+        );
+        data1.dialogId = customContent1;
+        this.uiContext.getPromptAction().openCustomDialog(customContent1, {
+          alignment: DialogAlignment.Center
+        })
+
+        break;
+      case MoreType.SPIRAL_FLY:
+        //螺旋功能
+        let wrappedBuilder2 = wrapBuilder<[Params]>(buildText)
+        let data2: Params = new ParamsBuilder().setTitle("一键螺旋")
+          .setText("开始后，飞行器将自动螺旋上升(最大半径15米左右)，注意周围环境，避免造成伤害!若遇紧急情况，立即用遥控器中断飞行!")
+          .setOnSuccess((type: Type) => {
+            if (type==Type.SLIDE) {
+              this.sendHyControlThread?.setSpiralFly(1)
+              setTimeout(() => {
+                // 执行异步任务（如更新UI状态）
+                this.sendHyControlThread?.setSpiralFly(0)
+              }, 1000); // 1000毫秒 = 1秒
+            }
+            this.uiContext?.getPromptAction().closeCustomDialog(data2.dialogId)
+          }).build()
+        const customContent2 = new ComponentContent(
+          this.uiContext, // 传入UIContext
+          wrappedBuilder2, // @Builder函数
+          data2
+        );
+        data2.dialogId = customContent2;
+        this.uiContext.getPromptAction().openCustomDialog(customContent2, {
+          alignment: DialogAlignment.Center
+        })
+        break;
+
 
     }
 
-  }
-
-  //拍照模式选择弹窗
-  ShootingMoreDialog() {
-    let wrappedBuilder = wrapBuilder<[ShootingSelectionParams]>(buildShootingSelectionDialog)
-    let data = new ShootingSelectionParams(this.uiContext, (id: ShootingType) => {
-
-    })
-    const customContent = new ComponentContent(
-      this.uiContext, // 传入UIContext
-      wrappedBuilder, // @Builder函数
-      data
-    );
-    data.dialogId = customContent;
-
-    this.uiContext.getPromptAction().openCustomDialog(customContent, {
-      alignment: DialogAlignment.CenterEnd,
-      offset: { dx: -80, dy: 0 }, // 可选：微调位置，负值向左偏移
-    })
   }
 
   onPressUnlock() {

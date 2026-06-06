@@ -4,9 +4,10 @@ export class Params {
   titleImg?: Resource = $r('app.media.ic_unlock_fly')
   dialogId?: ComponentContent;
   uiContext?: UIContext;
+  slideText?: string = "向右滑动开始"
   onSuccess?: (type: Type) => void;
 
-  constructor(title?: string, text?: string, titleImg?: Resource, onSuccess?: (type: Type) => void,
+  constructor(title?: string, text?: string, titleImg?: Resource, slideText?: string, onSuccess?: (type: Type) => void,
     uiContext?: UIContext) {
     this.title = title;
     this.text = text;
@@ -21,6 +22,7 @@ export class ParamsBuilder {
   titleImg?: Resource = $r('app.media.ic_unlock_fly')
   dialogId?: ComponentContent;
   uiContext?: UIContext;
+  slideText?: string = "向右滑动开始"
   onSuccess?: (type: Type) => void;
 
   setTitle(title: string): ParamsBuilder {
@@ -54,6 +56,11 @@ export class ParamsBuilder {
     return this;
   }
 
+  setSlideText(slideText?: string): ParamsBuilder {
+    this.slideText = slideText;
+    return this;
+  }
+
   build(): Params {
     const params = new Params();
     if (this.title !== undefined) {
@@ -73,6 +80,9 @@ export class ParamsBuilder {
     }
     if (this.titleImg !== undefined) {
       params.titleImg = this.titleImg;
+    }
+    if (this.slideText != undefined) {
+      params.slideText = this.slideText
     }
     return params;
   }

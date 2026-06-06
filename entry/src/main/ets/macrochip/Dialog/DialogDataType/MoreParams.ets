@@ -105,11 +105,11 @@ export  class MoreParams {
         break;
       case MoreType.SKY_FLY:
         bean.setIcon($r('app.media.ic_more_sky'));
-        bean.setText('冲天功能变高');
+        bean.setText('冲天功能');
         break;
       case MoreType.SPIRAL_FLY:
         bean.setIcon($r('app.media.ic_more_spiral'));
-        bean.setText('螺旋功能变高');
+        bean.setText('螺旋功能');
         break;
       case MoreType.SPORT:
         bean.setIcon($r('app.media.ic_more_sport'));
@@ -271,7 +271,7 @@ export  class MoreParams {
 
       if (DroneCodeManager.getInstance().isLanGuangEquals(HyDroneCode.XMM010FX)
         || DroneCodeManager.getInstance().isLanGuangEquals(HyDroneCode.XMM011FX)
-        || DroneCodeManager.getInstance().isLanGuangEquals(HyDroneCode.XMM012FX)) {
+        || DroneCodeManager.getInstance().isLanGuangEquals(HyDroneCode.XMM012FX)||true) {
          this.addMoreBean(MoreType.FAR_FLY);
          this.addMoreBean(MoreType.SKY_FLY);
          this.addMoreBean(MoreType.SPIRAL_FLY);
@@ -304,4 +304,19 @@ export  class MoreParams {
 
   }
 
+  /**
+   * 根据 MoreType 修改对应功能项的选中状态
+   * @param moreType 功能类型
+   * @param selected 是否选中
+   * @returns 是否找到并修改成功
+   */
+  // MoreParams.ets 中的方法示例
+  setSelectedForType(moreType: MoreType, selected: boolean): boolean {
+    const bean = this.arrMoreBean.find((item: MoreBean) => item.getType() === moreType);
+    if (bean) {
+      bean.setSelected(selected);   // 类型安全
+      return true;
+    }
+    return false;
+  }
 }

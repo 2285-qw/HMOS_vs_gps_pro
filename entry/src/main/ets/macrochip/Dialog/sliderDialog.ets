@@ -32,6 +32,7 @@ export function buildText(params: Params) {
         console.log('Dialog ID=:', params.dialogId);
         params.uiContext?.getPromptAction().closeCustomDialog(params.dialogId)
       }
+
     })
 
   }.borderRadius(15).background('#ff393636').outlineRadius(20).padding({left:30,right:30,top:20,bottom:20}).width(320)
