@@ -141,7 +141,7 @@ export  class MoreParams {
     if (ProtocolManager.getInstance().isFeiSha()) {
       // 飞沙协议所需要的功能挑选
       this.addMoreBean(MoreType.REV);
-       this.addMoreBean(MoreType._3D);
+      // this.addMoreBean(MoreType._3D);
        this.addMoreBean(MoreType.POINT);
        this.addMoreBean(MoreType.FOLLOW);
        this.addMoreBean(MoreType.AROUND);
@@ -186,9 +186,9 @@ export  class MoreParams {
         && !DroneCodeManager.getInstance().isLanGuangEquals(HyDroneCode.XMM010FX)
         && !DroneCodeManager.getInstance().isLanGuangEquals(HyDroneCode.XMM011FX)
         && !DroneCodeManager.getInstance().isLanGuangEquals(HyDroneCode.XMM012FX)) {
-         this.addMoreBean(MoreType.SPEED);
+         //this.addMoreBean(MoreType.SPEED);
       }
-       this.addMoreBean(MoreType.MUSIC);
+      // this.addMoreBean(MoreType.MUSIC);
       if (MoreHelper.isAdjustLens()) {
          this.addMoreBean(MoreType.CAMERA_ADJUST);
       }

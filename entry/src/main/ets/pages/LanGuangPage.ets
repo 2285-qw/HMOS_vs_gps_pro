@@ -56,6 +56,8 @@ import { map } from '@kit.MapKit';
 import { LGFlyLineBean } from '../macrochip/mode/LGFlyLineBean';
 import { AnimType, SlideAnimParams, SlideAnimParamsBuilder } from '../macrochip/Dialog/DialogDataType/SlideAnimParams';
 import { buildSlideAnim } from '../macrochip/Dialog/SlideAnimDialog';
+import { TFConsumer } from '../macrochip/utils/TFConsumer';
+import { SwitchType } from '../model/SwitchType';
 
 
 @Entry
@@ -69,6 +71,7 @@ struct LanGuangPage {
   @State top_title: string = ''; //头部显示文本
   @State currentMode: Mode = Mode.PHOTO; //拍照模式
   @State isRecording: boolean = false; //是否录像中
+  @State TF_S?: string = ''; //tf卡状态
   // 右侧弹窗：是否显示、当前选中的类型（用类型驱动右侧页面，确保点击左侧能切换）
   @State showRightDrawer: boolean = false;
   @State rightDrawerSelectedType: SettingType = SettingType.DATA;
@@ -152,8 +155,6 @@ struct LanGuangPage {
           .height('100%')
 
           Row() {
-
-
             Line().width(0.5).height('100%').backgroundColor('#ffffffff')
 
             Image($r('app.media.ic_control_moon'))
@@ -208,8 +209,17 @@ struct LanGuangPage {
         .width('100%')
         .height('12%')
 
-        //左侧按钮
+        //Tf卡
+        Row() {
+          Text(this.TF_S)
+            .backgroundColor('#88535050')
+            .height(30)
+        }.alignRules({
+          right: { anchor: '__container__', align: HorizontalAlign.End }
+        })
+        .margin({ top: 60, right: 20 })
 
+        //左侧按钮
         Column() {
           Image($r('app.media.ic_control_up'))
             .width(40)
@@ -225,7 +235,7 @@ struct LanGuangPage {
               let data: Params = new ParamsBuilder().setTitle("请确认是否自动起飞")
                 .setText("请确保飞行器处于水平地面，请勿在狭窄空间\\\\n人群中或者建筑物旁起飞，手切勿触碰螺旋桨")
                 .setOnSuccess((type: Type) => {
-                  if (type==Type.SLIDE) {
+                  if (type == Type.SLIDE) {
                     //起飞
                     console.log('解锁成功，执行起飞操作！类型：', type);
                     // 这里可以添加解锁后的具体逻辑，比如执行起飞操作
@@ -691,7 +701,7 @@ struct LanGuangPage {
         let data: Params = new ParamsBuilder().setTitle("一键远飞")
           .setText("开始后，飞行器将远离目标斜着往后退25米左右，注意后面空间，避免造成伤害!若遇紧急情况，立即用遥控器中断飞行!")
           .setOnSuccess((type: Type) => {
-            if (type==Type.SLIDE) {
+            if (type == Type.SLIDE) {
               this.sendHyControlThread?.setFarFly(1)
               setTimeout(() => {
                 // 执行异步任务（如更新UI状态）
@@ -716,7 +726,7 @@ struct LanGuangPage {
         let data1: Params = new ParamsBuilder().setTitle("一键冲天")
           .setText("开始后，飞行器将自动上升15米左右，注意上方障碍物，避免造成伤害!若遇紧急情况，立即用遥控器中断飞行!")
           .setOnSuccess((type: Type) => {
-            if (type==Type.SLIDE) {
+            if (type == Type.SLIDE) {
               this.sendHyControlThread?.setSkyFly(1)
               setTimeout(() => {
                 // 执行异步任务（如更新UI状态）
@@ -742,7 +752,7 @@ struct LanGuangPage {
         let data2: Params = new ParamsBuilder().setTitle("一键螺旋")
           .setText("开始后，飞行器将自动螺旋上升(最大半径15米左右)，注意周围环境，避免造成伤害!若遇紧急情况，立即用遥控器中断飞行!")
           .setOnSuccess((type: Type) => {
-            if (type==Type.SLIDE) {
+            if (type == Type.SLIDE) {
               this.sendHyControlThread?.setSpiralFly(1)
               setTimeout(() => {
                 // 执行异步任务（如更新UI状态）
@@ -761,6 +771,10 @@ struct LanGuangPage {
           alignment: DialogAlignment.Center
         })
         break;
+      case MoreType.FIND_DRONE:
+        RouteHelper.pushUrl('pages/SeekPlanePage');
+
+        break
 
 
     }
@@ -787,7 +801,7 @@ struct LanGuangPage {
 
     //订阅页面数据和底层数据区分开
     emitter.on({ eventId: ModeType.Page }, (eventData: emitter.GenericEventData<PageNewSendData<Object>>) => {
-      console.log("收到蓝光功能字信息:", JSON.stringify(eventData));
+      console.log("页数数据信息:", JSON.stringify(eventData));
       //页面数据
       this.onNewMessage(eventData.data)
 
@@ -799,6 +813,9 @@ struct LanGuangPage {
 
     //开始定位
     this.GetLocation();
+
+    //每五秒一次读取sd卡状态
+    TFConsumer.start();
 
 
   }
@@ -1071,9 +1088,36 @@ struct LanGuangPage {
         this.uiContext.getPromptAction().openCustomDialog(customContent, {
           alignment: DialogAlignment.Center
         })
-
-
         break
+      case SwitchType.NOTIFY_TF_EXIST_CARD:
+        // 有tf卡
+        this.TF_S = '有tf卡'
+        break
+      case SwitchType.NOTIFY_TF_NO_CARD:
+        // 没有tf卡
+        this.TF_S = '没有tf卡'
+        break
+      case SwitchType.NOTIFY_TF_FORMAT_BEGIN:
+        // 开始格式化
+        this.TF_S = ' 开始格式化'
+        break
+      case SwitchType.NOTIFY_TF_FORMAT_FINISHED:
+        // 格式化完成
+        this.TF_S = ' 格式化完成'
+        break
+      case SwitchType.NOTIFY_TF_FORMAT_FAIL:
+        // 格式化失败
+        this.TF_S = ' 格式化失败'
+        break
+      case SwitchType.NOTIFY_TF_NEED_PLUG:
+        // tf 需要重新插拔卡
+        this.TF_S = ' 需要重新插拔卡'
+        break
+      case SwitchType.NOTIFY_TF_FORMAT:
+        // tf卡需要格式化
+        this.TF_S = ' tf卡需要格式化'
+        break
+
     }
   }
 

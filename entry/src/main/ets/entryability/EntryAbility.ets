@@ -46,15 +46,17 @@ import { crashObserver } from '../utils/CrashHandler';
 const DOMAIN = 0x0000;
 
 export default class EntryAbility extends UIAbility {
-  private registerId: number = -1;//日志记录id
+  private registerId: number = -1;
+  //日志记录id
   // 1. 创建 UdpSocket 实例
   udpSocket: socket.UDPSocket = socket.constructUDPSocketInstance();
   communicator ?: USBAccessoryCommunicator;
   private isConnected: boolean = false;
   // 连接状态
+  //连接端口
   public static DEV_UDP_PORT = 8080;
   public static DEV_UDP_PORT_8081 = 8081;
-  public static DEV_UDP_PORT_8088 = 8088;
+  public static DEV_UDP_PORT_8088 = 8088;//海思端口
   public static DEV_TCP_PORT = 8888;
   public static STREAM_PORT = 8888;
   public static Ip: string = '';
@@ -94,20 +96,20 @@ export default class EntryAbility extends UIAbility {
 
     //注册全局崩溃日志
     this.registerId = errorManager.on("error", crashObserver);
-    LogManager.getInstance().info("进入app","初始化成功");
+    LogManager.getInstance().info("进入app", "初始化成功");
 
 
   }
 
-/*  // 1. 将观察者对象定义为类的私有成员
-  private registerObserver: errorManager.ErrorObserver = {
-    onUnhandledException: (errorMsg: string) => {
-      console.error('捕获到未处理的异常:', errorMsg);
-      // 2. 调用你的日志记录方法（将崩溃写入文件）
-      LogManager.getInstance().error('CrashHandler', errorMsg);
-      // 注意：不要调用 process.exit(0)，让系统自己处理退出
-    }
-  };*/
+  /*  // 1. 将观察者对象定义为类的私有成员
+    private registerObserver: errorManager.ErrorObserver = {
+      onUnhandledException: (errorMsg: string) => {
+        console.error('捕获到未处理的异常:', errorMsg);
+        // 2. 调用你的日志记录方法（将崩溃写入文件）
+        LogManager.getInstance().error('CrashHandler', errorMsg);
+        // 注意：不要调用 process.exit(0)，让系统自己处理退出
+      }
+    };*/
 
   onDestroy(): void {
     hilog.info(DOMAIN, 'testTag', '%{public}s', 'Ability onDestroy');
@@ -173,7 +175,6 @@ export default class EntryAbility extends UIAbility {
       console.error(`收到来UDP数据：${ObjectUtils.arrayBufferToHex(packet.message)}==========+${new Uint8Array(packet.message)}`);
       // 处理接收到的数据（如解析、展示等）
 
-
       //处理收到UDP数据
       // 转换为Uint8Array
       const uint8Array: Uint8Array = new Uint8Array(packet.message);
@@ -207,12 +208,15 @@ export default class EntryAbility extends UIAbility {
     if (EntryAbility.Ip.length == 0) {
       EntryAbility.Ip = WifiUtils.getWIFIIP()
     }
+    let mPort=EntryAbility.DEV_UDP_PORT;
+    if (WifiCommandHelper.checkFF3519(data)) {
+       mPort=EntryAbility.DEV_UDP_PORT_8088
+    }
     let targetIp: socket.NetAddress = {
       address: EntryAbility.Ip, // 服务器ip地址
-      port: EntryAbility.DEV_UDP_PORT, // 本地端口
+      port: mPort, // 本地端口
       family: 1, // 1:IPv4, 2:IPv6
     }
-    const data1 = new Uint8Array([0x0f]);
     this.udpSocket.send({
       data: data.buffer,
       address: targetIp,
@@ -318,28 +322,26 @@ export default class EntryAbility extends UIAbility {
     data: (type: number, data?: Uint8Array) => {
       console.log(`收到蓝光功能字解析类型`, type);
       const context = this.context;
-      this.sendEvent(type,data);
+      this.sendEvent(type, data);
     }
   };
-
 
   private sendEvent(type: number, data?: Uint8Array) {
     // 1. 创建事件对象
     const innerEvent: emitter.InnerEvent = {
-      eventId: ProtocolManager.getInstance().getProtocol(),  // 事件ID，需与接收方保持一致
+      eventId: ProtocolManager.getInstance().getProtocol(), // 事件ID，需与接收方保持一致
       priority: emitter.EventPriority.HIGH  // 优先级控制
     };
-   let  pageSendData:PageSendData=new PageSendData(ModeType.FlightControl,type,data);
+    let pageSendData: PageSendData = new PageSendData(ModeType.FlightControl, type, data);
     // 2. 创建要发送的数据
-    const eventData:emitter.EventData  = {
-      data:pageSendData
+    const eventData: emitter.EventData = {
+      data: pageSendData
     };
 
     // 3. 发送事件
     emitter.emit(innerEvent, eventData);
     console.log("事件发送成功");
   }
-
 
 
   private onHandleDataListener: OnHandleDataListener = {
@@ -349,13 +351,14 @@ export default class EntryAbility extends UIAbility {
       // 示例：根据连接类型和设备类型进行不同处理
       switch (connectionType) {
         case ConnectionType.UDP:
+          console.debug("收到udp数据===")
           //处理udp数据
           DeviceInfoManager.getInstance().processDeviceInfo(data)
+          DataNoticeManager.getInstance().processUdpNotification(data)
           break;
         case ConnectionType.TCP:
-          console.log('判断回调', this.analysisListener)
           //处理TCP数据
-          DataNoticeManager.getInstance().processTcpNotification(data, this.analysisListener)
+          DataNoticeManager.getInstance().processTcpNotification(data)
           this.onTcpReceiveData(data)
           break;
       }
@@ -436,11 +439,11 @@ export default class EntryAbility extends UIAbility {
 
   // 发送usb消息的方法
   writeUsbCmd(data: Uint8Array) {
-   /* USBAccessoryCommunicator.getInstance().getConnected().then((isConnected: boolean) => {
-      if (isConnected) {
-        USBAccessoryCommunicator.getInstance().sendDataToAccessory(data)
-      }
-    })*/
+    /* USBAccessoryCommunicator.getInstance().getConnected().then((isConnected: boolean) => {
+       if (isConnected) {
+         USBAccessoryCommunicator.getInstance().sendDataToAccessory(data)
+       }
+     })*/
     USBAccessoryCommunicator.getInstance().sendDataToAccessory(data)
 
   }
@@ -462,9 +465,8 @@ export default class EntryAbility extends UIAbility {
     //usb发送udp消息
     UsbWriteCommands.writeTCPCmd(data);
     //wifi发送udp消息
-  //  this.writeTCPCmd(data);
+    //  this.writeTCPCmd(data);
   }
-
 
 
   public setVideoHeartbeat(isHeartbeat: boolean) {
@@ -509,7 +511,6 @@ export default class EntryAbility extends UIAbility {
             packet = parse.parse_char(bt);
             if (packet != null) {
               DroneCodeManager.getInstance().processPacket(packet);
-              console.log("1111111111", this.analysisListener)
               if (this.analysisListener) {
                 ObserverManager.getInstance().subscribe(this.analysisListener, packet);
               }

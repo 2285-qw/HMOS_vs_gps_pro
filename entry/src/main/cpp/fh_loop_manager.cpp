@@ -74,8 +74,7 @@ napi_value FHLoopManager::createVideoStream(napi_env env, napi_callback_info typ
 napi_value FHLoopManager::addVideoStream(napi_env env, napi_callback_info data) {
 
     // 1. 打印字符串（无参数）
-
-    OH_LOG_FATAL(LOG_APP, "帧数据_addVideoStream 进入");
+    
 // LOG_APP表示应用日志类型，%{public}表示明文输出敏感信息
     // 1. 基础校验：句柄空/数据空/长度无效直接返回（上层已保证长度正确，仍做基础防护）
     if (FHLoopManager::GetInstance().myVideoLoopBufHandle == nullptr || data == nullptr) {
@@ -148,10 +147,9 @@ napi_value FHLoopManager::addVideoStream(napi_env env, napi_callback_info data) 
         }
         // 更新写入位置
         BLBDATA_AdvSetWritePos(FHLoopManager::GetInstance().myVideoLoopBufHandle, iRecvLen);
-        OH_LOG_FATAL(LOG_APP, "帧数据_addVideoStream 指针写入成功");
+       
     }
     // BLBDATA_Unlock(FHLoopManager::GetInstance().myVideoLoopBufHandle);
-    OH_LOG_FATAL(LOG_APP, "帧数据_addVideoStream 已走完");
     return nullptr;
 }
 

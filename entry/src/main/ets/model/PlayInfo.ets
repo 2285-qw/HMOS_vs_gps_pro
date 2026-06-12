@@ -1,13 +1,15 @@
-import {DroneEnum} from './DroneEnum'
+import { DeviceStatus } from '../SDK/DeviceStatus';
+import { DroneEnum } from './DroneEnum'
+
 /**
  * 视频流类型
  */
 export enum StreamType {
-  H264_VGA=1, // 低分辨率
-  H264=2,
-  JPEG=3,
-  H265=4,
-  YUV=5,
+  H264_VGA = 1, // 低分辨率
+  H264 = 2,
+  JPEG = 3,
+  H265 = 4,
+  YUV = 5,
 }
 
 
@@ -29,7 +31,7 @@ export enum DeviceType {
   VGA2,
   VGA2_872ET_320_320,
   VGA2_872AT_640_640,
-  YU_YAN_720,  // 鱼眼
+  YU_YAN_720, // 鱼眼
   UDP_720,
   HZ_5G_720_1, // 小写5g 720
   HZ_5G_720_2, // 大写5g 720
@@ -39,13 +41,13 @@ export enum DeviceType {
   UDP_2K,
   UDP_4K,
   RTSP_720,
-  _720P,      // 与RTSP720P一样
+  _720P, // 与RTSP720P一样
   RTSP_1080,
-  I_1080,       // 1080P-I (拍照拉伸为1080， 无插卡)
-  UDP_2K_30,    // 2k 回传720P 30fps
-  UDP_2_7K,     // 2.7k 回传720P
+  I_1080, // 1080P-I (拍照拉伸为1080， 无插卡)
+  UDP_2K_30, // 2k 回传720P 30fps
+  UDP_2_7K, // 2.7k 回传720P
   HI2K,
-  HI25K,        // 回传1024x576 默认拍照录像插值720
+  HI25K, // 回传1024x576 默认拍照录像插值720
   HI4K,
   FH8626_ssv6x5x_24g_1920_1280,
   FH8626_ssv6x5x_5g_1920_1280,
@@ -82,9 +84,9 @@ export class Resolution {
 
 
 export class PlayInfo {
-  public static  transportMode:TransportMode = TransportMode.TCP;
+  public static transportMode: TransportMode = TransportMode.TCP;
   public static firVersion: string; //WIFI 版本
-  public static deviceId: number=0; //版id
+  public static deviceId: number = 0; //版id
   public static subCameraType: SubCameraType; //副镜头（双镜头）类型
   public static chipMaker: number; // 芯片制造商
 
@@ -92,20 +94,24 @@ export class PlayInfo {
   public static showStream: number; //出图方式
   public static bandId: number = 0;
   public static frameRate: number = 25; //频段
-  public static streamType:StreamType =StreamType.H264;
-  public static  wifiRate:number; // 0=2.4G  1=5.8G
-  public static  firmwareVer:string;   // firmware 版本+分辨率
-  public static  cameraIndex:number; //镜头的index 0=主镜头、1=副镜头
-  public static  resolutionId:number= 0;//分辨率ID
-  public static  hisiResolutionId:number= -1;//海思3519分辨率ID
-  public static  frameWidth:number;
-  public static  frameHeight:number;
-  public static  deviceType:DeviceType = DeviceType.NONE; // wifi版类型
-  public static  mirror:boolean;        // 是否是镜子模式（翻转）
-  public static  droneEnum:DroneEnum = DroneEnum.no_drone;
-  public static  countryCode:string;   // 国家码
-  public static  Sensor:string;
-
+  public static streamType: StreamType = StreamType.H264;
+  public static wifiRate: number; // 0=2.4G  1=5.8G
+  public static firmwareVer: string; // firmware 版本+分辨率
+  public static cameraIndex: number; //镜头的index 0=主镜头、1=副镜头
+  public static resolutionId: number = 0; //分辨率ID
+  public static hisiResolutionId: number = -1; //海思3519分辨率ID
+  public static frameWidth: number;
+  public static frameHeight: number;
+  public static deviceType: DeviceType = DeviceType.NONE; // wifi版类型
+  public static mirror: boolean; // 是否是镜子模式（翻转）
+  public static droneEnum: DroneEnum = DroneEnum.no_drone;
+  public static countryCode: string; // 国家码
+  public static Sensor: string;
+  public static sdRemainSpace: number; // SD卡剩余容量
+  public static sdTotalSpace: number; // SD卡总容量
+  public static wifiStrength = 0; // wifi信号强度
+  public static rcStrength = 0; // 遥控信号强度
+  public static deviceStatusInfo?: DeviceStatus;
 
   // 公共静态方法：根据传入的数值设置subCameraType
   public static setSubCameraTypeByValue(value: number) {
@@ -116,12 +122,12 @@ export class PlayInfo {
   /**
    * 基础的配置
    */
-  public static  initConfigure() {
+  public static initConfigure() {
     PlayInfo.deviceType = DeviceType.NONE;
     PlayInfo.deviceId = 0;
     PlayInfo.resolutionId = 0;
     PlayInfo.hisiResolutionId = -1;
-    PlayInfo.mirror = true;        // 是否是镜子模式（翻转）
+    PlayInfo.mirror = true; // 是否是镜子模式（翻转）
     //        cameraIndex = 0;
     PlayInfo.subCameraType = SubCameraType.NO;
     PlayInfo.firmwareVer = "";
@@ -154,7 +160,6 @@ export class PlayInfo {
   }
 
 
-
   /**
    * 国科板
    *
@@ -169,7 +174,7 @@ export class PlayInfo {
    *
    * @return
    */
-  public static  isHisi():boolean {
+  public static isHisi(): boolean {
     //        return PlayInfo.deviceId == 71 || PlayInfo.deviceId == 72 || PlayInfo.deviceId == 99 || PlayInfo.deviceId == 100 || PlayInfo.deviceId == 105 || PlayInfo.deviceId == 113;
     return PlayInfo.chipMaker == 0x02;
   }
@@ -302,20 +307,32 @@ export class PlayInfo {
    *
    * @return
    */
-  public static  is872():boolean {
-    return PlayInfo.deviceType ==DeviceType.VGA2
+  public static is872(): boolean {
+    return PlayInfo.deviceType == DeviceType.VGA2
       || PlayInfo.deviceType == DeviceType.VGA2_872ET_320_320
       || PlayInfo.deviceType == DeviceType.VGA2_872AT_640_640
       || PlayInfo.deviceId == DeviceId._872_720
-      || PlayInfo.deviceId ==DeviceId._872_DOUBLE_CAMERA
+      || PlayInfo.deviceId == DeviceId._872_DOUBLE_CAMERA
       || (PlayInfo.chipMaker == 0x03 && PlayInfo.chipType == 0x01) // chipMaker=全志+masterControl=872
-      || (PlayInfo.chipMaker == 0x04 && (PlayInfo.chipType == 0x01 ||PlayInfo. chipType == 0x02)); // chipMaker=杰理+masterControl=872
+      || (PlayInfo.chipMaker == 0x04 &&
+        (PlayInfo.chipType == 0x01 || PlayInfo.chipType == 0x02)); // chipMaker=杰理+masterControl=872
   }
 
-  public static  isMr100():boolean {
-    return  PlayInfo.deviceType == DeviceType.Mr100_ssv6x5x_2048_2048 || PlayInfo.deviceType == DeviceType.Mr100_ssv6x5x_1920_1920 || PlayInfo.deviceType == DeviceType.Mr100_ssv6x5x_1920_1280 || PlayInfo.deviceType == DeviceType.Mr100_ssv6x5x_4000_2048 || PlayInfo.deviceType == DeviceType.Mr100_ssv6x5x_4000_1920 || PlayInfo.deviceType ==DeviceType.Mr100_ssv6x5x_4000_1280 || PlayInfo.deviceType == DeviceType.Mr100_8801_2048_2048 || PlayInfo.deviceType ==DeviceType.Mr100_8801_1920_1920 || PlayInfo.deviceType ==DeviceType.Mr100_8801_1920_1280 || PlayInfo.deviceType ==DeviceType.Mr100_8801_4000_2048 || PlayInfo.deviceType ==DeviceType.Mr100_8801_4000_1920 || PlayInfo.deviceType == DeviceType.Mr100_8801_4000_1280 || PlayInfo.deviceId == 41 || PlayInfo.chipType == 2 && PlayInfo.chipMaker == 3;
+  public static isMr100(): boolean {
+    return PlayInfo.deviceType == DeviceType.Mr100_ssv6x5x_2048_2048 ||
+      PlayInfo.deviceType == DeviceType.Mr100_ssv6x5x_1920_1920 ||
+      PlayInfo.deviceType == DeviceType.Mr100_ssv6x5x_1920_1280 ||
+      PlayInfo.deviceType == DeviceType.Mr100_ssv6x5x_4000_2048 ||
+      PlayInfo.deviceType == DeviceType.Mr100_ssv6x5x_4000_1920 ||
+      PlayInfo.deviceType == DeviceType.Mr100_ssv6x5x_4000_1280 ||
+      PlayInfo.deviceType == DeviceType.Mr100_8801_2048_2048 ||
+      PlayInfo.deviceType == DeviceType.Mr100_8801_1920_1920 ||
+      PlayInfo.deviceType == DeviceType.Mr100_8801_1920_1280 ||
+      PlayInfo.deviceType == DeviceType.Mr100_8801_4000_2048 ||
+      PlayInfo.deviceType == DeviceType.Mr100_8801_4000_1920 ||
+      PlayInfo.deviceType == DeviceType.Mr100_8801_4000_1280 || PlayInfo.deviceId == 41 ||
+      PlayInfo.chipType == 2 && PlayInfo.chipMaker == 3;
   }
-
 }
 
 
@@ -330,10 +347,10 @@ export enum SubCameraType {
 }
 
 export enum DeviceId {
-  _872_720=1,
-  _872_DOUBLE_CAMERA=2,
-  MR100_5G_8822CS_4K=10,
-  _8626_5G_8801_8603_1080P=13,
+  _872_720 = 1,
+  _872_DOUBLE_CAMERA = 2,
+  MR100_5G_8822CS_4K = 10,
+  _8626_5G_8801_8603_1080P = 13,
 }
 
 

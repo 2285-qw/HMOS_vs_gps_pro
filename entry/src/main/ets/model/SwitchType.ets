@@ -29,7 +29,8 @@ export enum SwitchType {
   // 开始格式化 
   NOTIFY_TF_FORMAT_BEGIN = 2020, 
   // 格式化完成 
-  NOTIFY_TF_FORMAT_FINISHED = 2021, 
+  NOTIFY_TF_FORMAT_FINISHED = 2021,
+
   // 格式化失败 
   NOTIFY_TF_FORMAT_FAIL = 2022, 
   // tf 需要重新插拔卡 
@@ -77,5 +78,13 @@ export enum SwitchType {
   // 解锁 
   NOTIFY_UNLOCK = 3014, 
   // 返航 
-  NOTIFY_GO_HOME = 3017, 
+  NOTIFY_GO_HOME = 3017,
+  // 设备信息(实时刷新)
+  SD_NEED_FORMAT=3018,
+  //wifi信号强度
+  NOTIFY_WIFI_STRENGTH=3019,
+  //遥控器信号强度
+  NOTIFY_RC_STRENGTH=3020,
+  // SD格式化中
+  SD_FORMAT_ING=3021,
 }

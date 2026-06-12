@@ -12,6 +12,7 @@
     "pages/MapPage",
     "pages/LogListPage",
     "pages/LogDetailPage",
-    "pages/MediaAlbum"
+    "pages/MediaAlbum",
+    "pages/SeekPlanePage"
   ]
 }

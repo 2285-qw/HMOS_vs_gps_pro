@@ -38,7 +38,26 @@ export class HisiCommandHelper {
     HisiCommandHelper.sendDataNew(0x1f);
   }
 
+  /**
+   * 获取SD卡信息
+   * 发送UDP命令：FF 35 19 0A 2E
+   */
+  public static  getSDInfo(): void {
+    const bytes = new Uint8Array(5);
+    bytes[0] = 0xFF;
+    bytes[1] = 0x35;
+    bytes[2] = 0x19;
+    bytes[3] = 0x0A;
+    bytes[4] = 0x2E;
+    EntryAbility.getInstance().sendUDPCmd(bytes);
+  }
 
+  /**
+   * 格式化
+   */
+  public static  formatSD(){
+    HisiCommandHelper.sendDataNew(0x11);
+  }
 
 
   /**

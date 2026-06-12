@@ -8,6 +8,7 @@ import { map, mapCommon } from '@kit.MapKit';
 import { media } from '@kit.MediaKit';
 import fs from '@ohos.file.fs';
 import image from '@ohos.multimedia.image';
+
 export class ObjectUtils {
   //ArrayBuffer转成16进制数据
   public static arrayBufferToHex(buffer: ArrayBuffer): string {
@@ -46,26 +47,26 @@ export class ObjectUtils {
    * @param val
    * @return
    */
-  public static  intTo2Bytes( num:number):Uint8Array {
+  public static intTo2Bytes(num: number): Uint8Array {
     // 创建长度为2的Uint8Array
-    let  arr = new Uint8Array(2);
+    let arr = new Uint8Array(2);
 
     // 大端序（高位在前）
-   /* arr[0] = (num >> 8) & 0xFF;  // 高8位
-    arr[1] = num & 0xFF;         // 低8位*/
+    /* arr[0] = (num >> 8) & 0xFF;  // 高8位
+     arr[1] = num & 0xFF;         // 低8位*/
 
     // 或者小端序（低位在前）
-     arr[0] = num & 0xFF;        // 低8位
-     arr[1] = (num >> 8) & 0xFF; // 高8位
+    arr[0] = num & 0xFF; // 低8位
+    arr[1] = (num >> 8) & 0xFF; // 高8位
 
     return arr;
-}
+  }
 
-//把Uint8Array转成string
-  public static  uint8ArrayToString(input: Uint8Array): string {
+  //把Uint8Array转成string
+  public static uint8ArrayToString(input: Uint8Array): string {
     // 创建解码器，指定 UTF-8 编码
     let textDecoder = util.TextDecoder.create('utf-8', {
-      fatal: false,    // 忽略解码错误
+      fatal: false, // 忽略解码错误
       ignoreBOM: true  // 忽略字节顺序标记
     });
     // 执行转换
@@ -73,11 +74,8 @@ export class ObjectUtils {
   }
 
 
-
-
-
   // 十六进制颜色转颜色矩阵工具函数（示例）
-  public static  hexToColorMatrix(hex: string): number[] {
+  public static hexToColorMatrix(hex: string): number[] {
     // 验证格式: 支持 #RRGGBB 或 #AARRGGBB
     if (!/^#([A-Fa-f0-9]{6}|[A-Fa-f0-9]{8})$/.test(hex)) {
       throw new Error('Invalid hex color format');
@@ -99,13 +97,13 @@ export class ObjectUtils {
       0, 0, 0, 0, r, // 红色通道
       0, 0, 0, 0, g, // 绿色通道
       0, 0, 0, 0, b, // 蓝色通道
-      0, 0, 0, a, 0  // 透明度通道（保留原始透明度混合）
+      0, 0, 0, a, 0// 透明度通道（保留原始透明度混合）
     ];
 
 
   }
 
-  private static  sendNotice(id: number, data?: Uint8Array) {
+  private static sendNotice(id: number, data?: Uint8Array) {
     // 1. 创建事件对象
     const innerEvent: emitter.InnerEvent = {
       eventId: id, // 事件ID，需与接收方保持一致
@@ -123,18 +121,55 @@ export class ObjectUtils {
   }
 
 
+  // 将 WGS84 转换为 GCJ02
+  public static wgs84ToGcj84(wgsLat: number, wgsLng: number): mapCommon.LatLng {
+    const wgsPos: mapCommon.LatLng = { latitude: wgsLat, longitude: wgsLng };
+    return map.convertCoordinateSync(
+      mapCommon.CoordinateType.WGS84,
+      mapCommon.CoordinateType.GCJ02,
+      wgsPos
+    );
+  }
 
+  /**
+   * byte[4]转int
+   *
+   * @param bytes 需要转换成int的数组
+   * @return int值
+   */
+  public static byteArrayToInt(bytes: Uint8Array): number {
+    let value: number = 0;
+    for (let i = 0; i < 4; i++) {
+      let shift: number = (3 - i) * 8;
+      value += (bytes[i] & 0xFF) << shift;
+    }
+    return value;
+  }
 
-// 将 WGS84 转换为 GCJ02
-public static  wgs84ToGcj84(wgsLat: number, wgsLng: number): mapCommon.LatLng {
-  const wgsPos: mapCommon.LatLng = { latitude: wgsLat, longitude: wgsLng };
-  return map.convertCoordinateSync(
-    mapCommon.CoordinateType.WGS84,
-    mapCommon.CoordinateType.GCJ02,
-    wgsPos
-  );
-}
+  /**
+   * 将带符号的 byte 值（-128..127）转换为无符号值（0..255）
+   * @param b 带符号的 byte 值（通常来自 DataView 的 getInt8 或类似来源）
+   * @returns 无符号整数值（0..255）
+   */
+  public static toInt(b: number): number {
+    return b & 0xFF;
+  }
 
-
-
+  /**
+   * 将 8 字节的大端字节数组转换为 64 位无符号整数（使用 bigint 保证精度）
+   * 大端模式：bytes[0] 为最高字节，bytes[7] 为最低字节
+   * @param bytes 长度为 8 的字节数组
+   * @returns 解析后的 bigint 值（0 ~ 2^64-1）
+   * @throws Error 如果字节数组长度不足 8
+   */
+  public static bytesToLongBigEndian(bytes: Uint8Array): number {
+    if (bytes.length < 8) {
+      throw new Error(`字节数组长度不足 8，实际 ${bytes.length}`);
+    }
+    let value = 0;
+    for (let i = 0; i < 8; i++) {
+      value = value * 256 + bytes[i];
+    }
+    return value;
+  }
 }
